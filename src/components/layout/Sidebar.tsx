@@ -29,6 +29,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { StaffProfile, SystemRole, DesignationId } from '../../types/doorbly';
+import { DoorblyLogo } from '../common/DoorblyLogo';
 
 export type ActiveTab =
   | 'dashboard'
@@ -214,11 +215,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="w-64 bg-[#123C45] text-white flex flex-col shrink-0 min-h-[calc(100vh-57px)] select-none">
       {/* Employee Quick Identity Header */}
-      <div className="p-3.5 border-b border-teal-800/40 bg-black/10">
+      <div className="p-3 border-b border-teal-800/40 bg-black/15">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#0F766E] text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
-            {currentUser.fullName.charAt(0)}
-          </div>
+          <DoorblyLogo size="sm" rounded={true} />
           <div className="truncate">
             <p className="text-xs font-semibold text-white truncate leading-tight">
               {currentUser.fullName}

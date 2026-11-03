@@ -34,8 +34,8 @@ export const PartnerOnboardingView: React.FC<PartnerOnboardingViewProps> = ({ cu
   const [mobile, setMobile] = useState('');
   const [districtId, setDistrictId] = useState(currentUser.districtId || 'khordha');
   const [locality, setLocality] = useState('');
-  const [experience, setExperience] = useState(4);
-  const [skills, setSkills] = useState('Split AC Installation, PCB Repair, Gas Charging');
+  const [experience, setExperience] = useState(1);
+  const [skills, setSkills] = useState('');
   const [category, setCategory] = useState('HVAC / Appliance');
 
   const districts = StorageEngine.getDistricts();

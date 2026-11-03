@@ -33,9 +33,9 @@ export const BookingPipelineView: React.FC<BookingPipelineViewProps> = ({ curren
   const [custName, setCustName] = useState('');
   const [custMobile, setCustMobile] = useState('');
   const [districtId, setDistrictId] = useState(currentUser.districtId || 'khordha');
-  const [serviceTitle, setServiceTitle] = useState('AC Jet Wash & Gas Topup');
-  const [subtotal, setSubtotal] = useState(1500);
-  const [partnerName, setPartnerName] = useState('Santosh Swain (Certified Tech)');
+  const [serviceTitle, setServiceTitle] = useState('');
+  const [subtotal, setSubtotal] = useState(0);
+  const [partnerName, setPartnerName] = useState('');
   const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().slice(0, 16));
 
   const districts = StorageEngine.getDistricts();

@@ -52,7 +52,8 @@ import {
   Shield,
   CalendarCheck,
   CheckSquare,
-  Wallet
+  Wallet,
+  Database
 } from 'lucide-react';
 import {
   StaffProfile,
@@ -82,6 +83,8 @@ import { StorageEngine } from '../../services/storageEngine';
 import { COMPLETE_DOORBLY_SCHEMA_SQL } from '../../sql/schemaSql';
 import { StaffWorkEarningsAdmin } from './StaffWorkEarningsAdmin';
 import { AdminWalletControlCentre } from './AdminWalletControlCentre';
+import { SqlSupabaseAdminIntegration } from './SqlSupabaseAdminIntegration';
+import { DoorblyLogo } from '../common/DoorblyLogo';
 
 interface CentralAdminPanelProps {
   currentUser: StaffProfile;
@@ -91,6 +94,7 @@ export type AdminSubTab =
   | 'overview'
   | 'work_earnings'
   | 'wallet_control'
+  | 'sql_database'
   | 'departments'
   | 'employees'
   | 'partners'
@@ -539,22 +543,25 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
 
       {/* Main Administrative Control Header */}
       <div className="bg-[#123C45] text-white rounded-xl p-5 border border-teal-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#0F766E] text-white">
-              Statewide Directorate
-            </span>
-            <span className="text-xs text-teal-300">Central Control Panel</span>
-            <span className="text-[10px] text-teal-200/80 bg-teal-900/60 px-2 py-0.5 rounded font-mono">
-              30 Districts of Odisha
-            </span>
+        <div className="flex items-start space-x-3.5">
+          <DoorblyLogo size="lg" rounded={true} />
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#0F766E] text-white">
+                Statewide Directorate
+              </span>
+              <span className="text-xs text-teal-300">Central Control Panel</span>
+              <span className="text-[10px] text-teal-200/80 bg-teal-900/60 px-2 py-0.5 rounded font-mono">
+                30 Districts of Odisha
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-white mt-1">
+              Central Administrative Control Panel
+            </h1>
+            <p className="text-xs text-teal-100/80 mt-0.5">
+              Unified governance across all 9 departments, employees, service partners, booking revenue, and audit trails.
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-white mt-1">
-            Central Administrative Control Panel
-          </h1>
-          <p className="text-xs text-teal-100/80 mt-0.5">
-            Unified governance across all 9 departments, employees, service partners, booking revenue, and audit trails.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -589,6 +596,7 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
         >
           {[
             { id: 'overview', label: 'Executive Overview', icon: Layers },
+            { id: 'sql_database', label: 'SQL & Supabase Hub', count: 23, icon: Database, badgeColor: 'bg-[#0F766E]' },
             { id: 'work_earnings', label: 'Work & Earnings', icon: Briefcase },
             { id: 'wallet_control', label: 'Wallet Control', count: staffList.length, icon: Wallet },
             { id: 'departments', label: 'Department Control', count: departments.length, icon: Building },
@@ -2083,6 +2091,28 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
             </div>
           </div>
 
+          {/* Quick shortcut to SQL & Supabase Hub */}
+          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 bg-[#0F766E] text-white rounded-lg shadow-xs">
+                <Database className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-gray-900">Interactive SQL Console & Supabase Cloud Hub</h4>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Execute live or simulated SQL queries, inspect all 23 database tables, test connection pings, and push local data to Supabase.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab('sql_database')}
+              className="px-4 py-2 bg-[#0F766E] hover:bg-[#123C45] text-white font-bold rounded-lg text-xs transition flex items-center space-x-1.5 shadow-xs shrink-0 cursor-pointer"
+            >
+              <span>Open SQL & Supabase Hub</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {/* Supabase SQL Migration Exporter */}
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
@@ -2090,24 +2120,40 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
                 <FileCode className="w-4 h-4 text-[#0F766E]" />
                 <span>Production PostgreSQL / Supabase Schema (23 Tables)</span>
               </h3>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(COMPLETE_DOORBLY_SCHEMA_SQL);
-                  setCopiedSql(true);
-                  setTimeout(() => setCopiedSql(false), 2000);
-                  showToast('SQL migration copied to clipboard!');
-                }}
-                className="px-3 py-1.5 bg-[#0F766E] hover:bg-[#123C45] text-white text-xs font-semibold rounded-md transition flex items-center space-x-1"
-              >
-                {copiedSql ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white" />}
-                <span>{copiedSql ? 'Copied!' : 'Copy Schema SQL'}</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setActiveTab('sql_database')}
+                  className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-xs font-semibold rounded-md transition flex items-center space-x-1"
+                >
+                  <Database className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>Full SQL Hub</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(COMPLETE_DOORBLY_SCHEMA_SQL);
+                    setCopiedSql(true);
+                    setTimeout(() => setCopiedSql(false), 2000);
+                    showToast('SQL migration copied to clipboard!');
+                  }}
+                  className="px-3 py-1.5 bg-[#0F766E] hover:bg-[#123C45] text-white text-xs font-semibold rounded-md transition flex items-center space-x-1"
+                >
+                  {copiedSql ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white" />}
+                  <span>{copiedSql ? 'Copied!' : 'Copy Schema SQL'}</span>
+                </button>
+              </div>
             </div>
             <pre className="p-3 bg-gray-900 text-teal-300 font-mono text-[11px] rounded-lg max-h-48 overflow-y-auto">
               {COMPLETE_DOORBLY_SCHEMA_SQL.slice(0, 800)}...
             </pre>
           </div>
         </div>
+      )}
+
+      {/* =========================================================================
+          MODULE: SQL & SUPABASE INTEGRATION HUB
+         ========================================================================= */}
+      {activeTab === 'sql_database' && (
+        <SqlSupabaseAdminIntegration currentUser={currentUser} />
       )}
 
       {/* =========================================================================

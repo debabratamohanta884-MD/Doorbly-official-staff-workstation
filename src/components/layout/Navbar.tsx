@@ -21,6 +21,7 @@ import {
 import { StaffProfile } from '../../types/doorbly';
 import { StorageEngine } from '../../services/storageEngine';
 import { isSupabaseConfigured } from '../../services/supabaseClient';
+import { DoorblyLogo } from '../common/DoorblyLogo';
 
 interface NavbarProps {
   currentUser: StaffProfile;
@@ -84,22 +85,14 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 bg-[#FFFFFF] border-b border-gray-200 px-4 lg:px-6 py-2.5 flex items-center justify-between shadow-xs">
       {/* Brand & District Info */}
       <div className="flex items-center space-x-3">
-        <div className="flex items-center space-x-2">
-          <div className="w-9 h-9 rounded-lg bg-[#0F766E] flex items-center justify-center text-white font-black text-xl tracking-tight">
-            D
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="font-bold text-[#123C45] text-lg tracking-tight">DOORBLY</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider bg-[#0F766E]/10 text-[#0F766E] px-1.5 py-0.5 rounded">
-                Workstation
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-500 hidden sm:block">
-              Odisha Remote Employee Network
-            </p>
-          </div>
-        </div>
+        <DoorblyLogo
+          size="md"
+          showText={true}
+          badgeText="Workstation"
+          subtitle="Odisha Remote Operations"
+          animateFlip={true}
+          showOrbitLight={true}
+        />
 
         {/* Assigned District Badge */}
         <div className="hidden md:flex items-center space-x-1.5 bg-[#F7F9FA] border border-gray-200 text-gray-700 px-2.5 py-1 rounded-md text-xs font-medium">

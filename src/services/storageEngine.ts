@@ -96,13 +96,48 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'doorbly_staff_notifications'
 };
 
+const KEY_TO_TABLE: Record<string, string> = {
+  doorbly_staff_profiles: 'staff_profiles',
+  doorbly_districts_master: 'districts',
+  doorbly_departments: 'departments',
+  doorbly_designations: 'job_designations',
+  doorbly_daily_tasks: 'daily_tasks',
+  doorbly_task_submissions: 'task_submissions',
+  doorbly_work_credits: 'employee_work_credits',
+  doorbly_attendance: 'employee_attendance',
+  doorbly_employee_leaves: 'employee_leave',
+  doorbly_leads: 'leads',
+  doorbly_corp_prospects: 'corporate_prospects',
+  doorbly_partner_apps: 'partner_applications',
+  doorbly_bookings: 'booking_pipeline',
+  doorbly_complaint_tickets: 'complaint_tickets',
+  doorbly_announcements: 'system_announcements',
+  doorbly_audit_logs: 'system_audit_logs',
+  doorbly_task_values: 'task_value_master',
+  doorbly_daily_reports: 'department_daily_reports',
+  doorbly_hr_candidates: 'job_candidates',
+  doorbly_financial_txns: 'financial_transactions',
+  doorbly_staff_wallets: 'staff_wallets',
+  doorbly_staff_wallet_txns: 'staff_wallet_transactions',
+  doorbly_staff_work_assignments: 'staff_work_assignments',
+  doorbly_staff_notifications: 'staff_notifications'
+};
+
 function getStoredItem<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
+    if (raw === null || raw === undefined) return fallback;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      // If parsing fails (for example, raw unquoted strings like "staff-admin-01"),
+      // safely return the raw string if expected value is a string
+      if (typeof fallback === 'string' || typeof raw === 'string') {
+        return raw as unknown as T;
+      }
+      return fallback;
+    }
   } catch (err) {
-    console.error(`Error reading ${key} from storage:`, err);
     return fallback;
   }
 }
@@ -110,6 +145,18 @@ function getStoredItem<T>(key: string, fallback: T): T {
 function setStoredItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+
+    // Automatically persist to Supabase if key maps to a database table
+    const tableName = KEY_TO_TABLE[key];
+    if (tableName && Array.isArray(value) && value.length > 0) {
+      import('./supabaseClient')
+        .then(({ persistToSupabaseAsync }) => {
+          // Send all items if small list, or latest 10 items
+          const itemsToSync = value.length <= 50 ? value : value.slice(0, 5);
+          persistToSupabaseAsync(tableName, itemsToSync);
+        })
+        .catch(() => {});
+    }
   } catch (err) {
     console.error(`Error writing ${key} to storage:`, err);
   }
@@ -117,17 +164,17 @@ function setStoredItem<T>(key: string, value: T): void {
 
 // Initialize seed data if not present (clears legacy mock/demo data and seeds wallet baseline)
 export function initializeStorageIfNeeded(): void {
-  const CURRENT_STORAGE_VERSION = 'doorbly_realtime_v2_wallets';
+  const CURRENT_STORAGE_VERSION = 'doorbly_realtime_v3_production';
   const existingVersion = localStorage.getItem(STORAGE_KEYS.VERSION);
 
-  // If upgrading version, refresh baseline storage
+  // If upgrading version, purge all legacy mock data and refresh pristine operational baseline
   if (existingVersion !== CURRENT_STORAGE_VERSION) {
-    localStorage.removeItem(STORAGE_KEYS.STAFF);
-    localStorage.removeItem(STORAGE_KEYS.WALLETS);
-    localStorage.removeItem(STORAGE_KEYS.WALLET_TXNS);
-    localStorage.removeItem(STORAGE_KEYS.WORK_ASSIGNMENTS);
-    localStorage.removeItem(STORAGE_KEYS.WITHDRAWALS);
-    localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+    Object.values(STORAGE_KEYS).forEach(k => {
+      if (k !== STORAGE_KEYS.CURRENT_USER_ID) {
+        localStorage.removeItem(k);
+      }
+    });
+    setStoredItem(STORAGE_KEYS.CURRENT_USER_ID, 'staff-admin-01');
     localStorage.setItem(STORAGE_KEYS.VERSION, CURRENT_STORAGE_VERSION);
   }
 
@@ -205,7 +252,15 @@ initializeStorageIfNeeded();
 export const StorageEngine = {
   // --- AUTHENTICATION & SESSION ---
   getCurrentUserId(): string {
-    return getStoredItem<string>(STORAGE_KEYS.CURRENT_USER_ID, 'staff-admin-01');
+    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
+    if (!raw) return 'staff-admin-01';
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed === 'string' && parsed.trim()) return parsed.trim();
+    } catch {
+      if (typeof raw === 'string' && raw.trim()) return raw.trim();
+    }
+    return 'staff-admin-01';
   },
 
   setCurrentUserId(id: string): void {
@@ -213,10 +268,16 @@ export const StorageEngine = {
   },
 
   getCurrentUser(): StaffProfile {
-    const id = this.getCurrentUserId();
-    const staffList = this.getStaffProfiles();
-    const found = staffList.find(s => s.id === id || s.employeeId === id);
-    return found || staffList[0];
+    try {
+      const id = this.getCurrentUserId();
+      const staffList = this.getStaffProfiles();
+      const found = staffList.find(s => s.id === id || s.employeeId === id);
+      if (found) return found;
+      if (staffList.length > 0) return staffList[0];
+      return INITIAL_STAFF_MEMBERS[0];
+    } catch {
+      return INITIAL_STAFF_MEMBERS[0];
+    }
   },
 
   loginByEmployeeId(employeeId: string): { success: boolean; profile?: StaffProfile; error?: string } {
@@ -304,7 +365,31 @@ export const StorageEngine = {
 
   // --- DISTRICTS & TARGETS ---
   getDistricts(): DistrictMaster[] {
-    return getStoredItem<DistrictMaster[]>(STORAGE_KEYS.DISTRICTS, ODISHA_DISTRICTS_INITIAL);
+    const raw = getStoredItem<DistrictMaster[]>(STORAGE_KEYS.DISTRICTS, ODISHA_DISTRICTS_INITIAL);
+    const bookings = getStoredItem<BookingRecord[]>(STORAGE_KEYS.BOOKINGS, INITIAL_BOOKINGS);
+    const staff = getStoredItem<StaffProfile[]>(STORAGE_KEYS.STAFF, INITIAL_STAFF_MEMBERS);
+
+    return raw.map(d => {
+      const districtBookings = bookings.filter(b => b.districtId === d.id && b.bookingStatus === 'completed');
+      const districtStaff = staff.filter(s => s.districtId === d.id && s.status === 'active');
+      const manager = staff.find(s => s.districtId === d.id && (s.systemRole === 'district_manager' || s.designationId === 'dm'));
+      const coordinator = staff.find(s => s.districtId === d.id && (s.systemRole === 'district_coordinator' || s.designationId === 'dc'));
+
+      const dynamicSubtotal = districtBookings.reduce((sum, b) => sum + (b.serviceSubtotal || 0), 0);
+      const dynamicCount = districtBookings.length;
+      const dynamicStaffCount = districtStaff.length;
+
+      return {
+        ...d,
+        actualCompletedSubtotal: dynamicSubtotal,
+        completedBookingsCount: dynamicCount,
+        activeStaffCount: dynamicStaffCount,
+        managerName: manager?.fullName,
+        coordinatorName: coordinator?.fullName,
+        managerPhone: manager?.mobile,
+        coordinatorPhone: coordinator?.mobile
+      };
+    });
   },
 
   updateDistrictTarget(districtId: string, newDailyTarget: number, actor: StaffProfile): void {
@@ -1996,6 +2081,31 @@ export const StorageEngine = {
       if (n.staffId === staffId) n.isRead = true;
     });
     setStoredItem(STORAGE_KEYS.NOTIFICATIONS, list);
+  },
+
+  async pullFromSupabase(): Promise<{ success: boolean; pulledCounts: Record<string, number>; error?: string }> {
+    try {
+      const { getSupabaseClient, isSupabaseConfigured, canonicalTableName, TABLE_METADATA_MASTER } = await import('./supabaseClient');
+      const client = getSupabaseClient();
+      if (!client || !isSupabaseConfigured()) {
+        return { success: false, pulledCounts: {}, error: 'Supabase is not configured yet.' };
+      }
+      const counts: Record<string, number> = {};
+      for (const t of TABLE_METADATA_MASTER) {
+        const dbTable = canonicalTableName(t.name);
+        const { data, error } = await client.from(dbTable).select('*');
+        if (!error && data && data.length > 0) {
+          counts[dbTable] = data.length;
+          const matchingKey = Object.keys(KEY_TO_TABLE).find(k => KEY_TO_TABLE[k] === dbTable);
+          if (matchingKey) {
+            localStorage.setItem(matchingKey, JSON.stringify(data));
+          }
+        }
+      }
+      return { success: true, pulledCounts: counts };
+    } catch (err: any) {
+      return { success: false, pulledCounts: {}, error: err.message };
+    }
   },
 
   purgeAndResetRealtime(): void {

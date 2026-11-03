@@ -384,6 +384,92 @@ CREATE TABLE IF NOT EXISTS system_audit_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 23. JOB CANDIDATES (Recruitment Pipeline)
+CREATE TABLE IF NOT EXISTS job_candidates (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    full_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    mobile TEXT NOT NULL,
+    district_id TEXT REFERENCES districts(id),
+    applying_designation_id TEXT REFERENCES job_designations(id),
+    stage TEXT NOT NULL DEFAULT 'Applied' CHECK (stage IN ('Applied', 'Screening', 'Interview', 'Selected', 'Onboarded', 'Rejected')),
+    resume_url TEXT,
+    notes TEXT,
+    applied_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 24. FINANCIAL TRANSACTIONS (Central Accounts Ledger)
+CREATE TABLE IF NOT EXISTS financial_transactions (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    transaction_date TIMESTAMPTZ DEFAULT NOW(),
+    type TEXT NOT NULL,
+    direction TEXT NOT NULL CHECK (direction IN ('credit', 'debit')),
+    amount NUMERIC(12, 2) NOT NULL,
+    description TEXT NOT NULL,
+    actor_id TEXT REFERENCES staff_profiles(id),
+    actor_name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed', 'reversed')),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 25. STAFF WALLETS (Productivity Earnings & Balances)
+CREATE TABLE IF NOT EXISTS staff_wallets (
+    staff_id TEXT PRIMARY KEY REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    employee_id TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL,
+    designation_title TEXT NOT NULL,
+    district_name TEXT NOT NULL,
+    available_balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    total_earnings NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    total_withdrawn NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    pending_withdrawal NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    total_admin_adjustments NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    bank_account_number TEXT,
+    bank_ifsc TEXT,
+    bank_name TEXT,
+    account_holder_name TEXT,
+    upi_id TEXT,
+    is_bank_verified BOOLEAN DEFAULT FALSE,
+    is_payout_blocked BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 26. STAFF WALLET TRANSACTIONS (Granular Credit/Debit Entries)
+CREATE TABLE IF NOT EXISTS staff_wallet_transactions (
+    transaction_id TEXT PRIMARY KEY,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    employee_id TEXT NOT NULL,
+    date TIMESTAMPTZ DEFAULT NOW(),
+    work_description TEXT NOT NULL,
+    category TEXT NOT NULL,
+    type TEXT NOT NULL,
+    credit NUMERIC(12, 2) DEFAULT 0.00,
+    debit NUMERIC(12, 2) DEFAULT 0.00,
+    running_balance NUMERIC(12, 2) NOT NULL,
+    task_reference_id TEXT,
+    status TEXT NOT NULL DEFAULT 'completed',
+    admin_remarks TEXT,
+    authorized_by TEXT NOT NULL
+);
+
+-- 27. STAFF WORK ASSIGNMENTS (Weekly Performance Targets)
+CREATE TABLE IF NOT EXISTS staff_work_assignments (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    employee_id TEXT NOT NULL,
+    employee_name TEXT NOT NULL,
+    designation_title TEXT NOT NULL,
+    district_name TEXT NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    target_points NUMERIC(8, 2) NOT NULL DEFAULT 100.00,
+    achieved_points NUMERIC(8, 2) NOT NULL DEFAULT 0.00,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'under_review', 'missed')),
+    assigned_by_name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- =========================================================================
 -- INDEXES FOR MAXIMUM QUERY SPEED ACROSS ALL 30 DISTRICTS
 -- =========================================================================

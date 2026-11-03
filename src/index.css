@@ -77,3 +77,48 @@
 .horizontal-scroll-container::-webkit-scrollbar-thumb:hover {
   background: #0f766e;
 }
+
+/* ==========================================================================
+   DOORBLY EMBLEM HEADER ANIMATIONS
+   - Continuous 3D Logo Flip (RotateY 0 -> 360deg)
+   - Continuous Orbiting Sharp Pinpoint Green Light
+   ========================================================================== */
+
+@keyframes doorblyFlip3D {
+  0% {
+    transform: perspective(500px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(500px) rotateY(360deg);
+  }
+}
+
+.animate-doorbly-flip {
+  animation: doorblyFlip3D 4.5s linear infinite;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+@keyframes doorblyOrbit360 {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-doorbly-orbit {
+  animation: doorblyOrbit360 2.8s linear infinite;
+  will-change: transform;
+}
+
+/* Sharp Pinpoint Green Light Dot (Crisp, High-Intensity Laser Point) */
+.doorbly-pinpoint-dot {
+  background: #ffffff;
+  border-radius: 9999px;
+  box-shadow: 
+    0 0 0 1px #10b981,
+    0 0 3px 1px #059669,
+    0 0 5px 1.5px #34d399;
+}
