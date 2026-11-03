@@ -1,0 +1,6 @@
+{
+  "name": "DOORBLY – Remote Employee Workstation & Management System",
+  "description": "Multi-district remote employee workstation, task assignment engine, productivity credits, and operations management platform across 30 districts of Odisha for Doorbly.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

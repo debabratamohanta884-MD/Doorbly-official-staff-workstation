@@ -1,0 +1,1039 @@
+# PROJECT: DOORBLY REMOTE EMPLOYEE WORKSTATION & MANAGEMENT SYSTEM
+
+## 1. PROJECT OBJECTIVE
+
+Develop a complete, modern, professional, responsive web application named:
+
+**DOORBLY – Remote Employee Workstation & Management System**
+
+Website: `workstation.doorbly.com`
+
+The application will be used by Doorbly employees working remotely across all 30 districts of Odisha, India.
+
+This must be a fully functional business application, not a static dashboard, UI prototype, or demo application.
+
+Build one centralized web application with individual employee workspaces. Every employee must see a personalized dashboard according to their employee ID, department, designation, reporting manager and assigned district.
+
+The system must connect employees, department heads, District Coordinators, District Managers and Central Administration.
+
+### Main business objectives
+
+1. Manage remote employees across Odisha.
+2. Assign daily tasks automatically or manually.
+3. Monitor employee attendance and productivity.
+4. Manage customer lead generation.
+5. Manage residential and corporate enquiries.
+6. Manage service-provider onboarding.
+7. Monitor customer bookings and completed services.
+8. Track department-wise work submissions.
+9. Verify completed tasks and award productivity credits.
+10. Monitor district-wise revenue.
+11. Achieve a combined daily service-subtotal target of ₹1,00,000 across 30 districts.
+12. Generate automatic daily, weekly and monthly reports.
+
+## 2. TECHNOLOGY STACK
+
+Use the following technology:
+
+- Frontend: React + TypeScript.
+- Build tool: Vite.
+- UI: Tailwind CSS.
+- Icons: Lucide React.
+- Database: Existing Doorbly Supabase project.
+- Authentication: Existing Doorbly Firebase Authentication.
+- File storage: Supabase Storage.
+- Realtime updates: Supabase Realtime.
+- Notifications: Firebase Cloud Messaging.
+- Charts: Recharts.
+- Hosting: Vercel.
+- Domain: workstation.doorbly.com.
+
+IMPORTANT:
+
+The existing Doorbly Customer and Partner applications already use Firebase Authentication and Supabase.
+
+Do not create a new independent database unless absolutely necessary.
+
+First inspect the existing application configuration and available database structure. Reuse compatible existing tables and relationships. Create only missing tables and columns through safe SQL migrations.
+
+Never delete existing customer, partner, booking, service or financial data.
+
+Do not expose Firebase service-account credentials, Supabase service-role keys, private API keys or administrative secrets in frontend code.
+
+## 3. BRANDING AND DESIGN
+
+Brand name: Doorbly.
+
+Primary colour: #0F766E.
+
+Supporting colours:
+- Dark teal: #123C45.
+- Secondary teal: #176B68.
+- White: #FFFFFF.
+- Light background: #F7F9FA.
+- Text: #263238.
+- Success: #16865D.
+- Warning: #D69E24.
+- Error: #DC4545.
+
+Design requirements:
+
+- Premium corporate SaaS interface.
+- Minimal and professional.
+- Rapido-inspired functional sidebar layout.
+- Clean white and light background.
+- Responsive desktop, laptop, tablet and mobile.
+- No unnecessary shadows.
+- No decorative underlines on links.
+- Consistent typography.
+- Smooth and lightweight interactions.
+- Fast loading, including on low-end Windows computers.
+- Accessible buttons, labels and forms.
+
+Use the official Doorbly logo if provided. Otherwise, create a clean text-based Doorbly logo placeholder.
+
+## 4. USER ROLES AND DESIGNATIONS
+
+Create role-based dashboards for the following 12 designations.
+
+1. District Manager (DM).
+2. District Coordinator (DC).
+3. HR Executive.
+4. Tele Caller – General Operations.
+5. Corporate Caller – Corporate Services.
+6. Partner Caller – Service Provider Onboarding.
+7. Customer Support Executive.
+8. Lead Generation Executive – General.
+9. Residential Lead Generation Executive.
+10. Corporate Lead Generation Executive.
+11. Technical Executive / IT Support Engineer.
+12. Software Developer / Web Developer.
+
+Additional system roles:
+
+- Super Admin / Director.
+- Central Department Head.
+- District Manager.
+- District Coordinator.
+- Employee.
+
+The Admin must be able to create additional departments and designations without changing source code.
+
+## 5. LOGIN AND AUTHENTICATION
+
+Create a professional login page.
+
+Login fields:
+- Employee ID.
+- Password.
+- Remember login option.
+- Forgot password.
+- Login button.
+
+Authentication must use the existing Firebase Authentication system.
+
+After successful authentication, retrieve the employee's authorized profile from Supabase.
+
+Employee profile must include:
+
+- Employee ID.
+- Full name.
+- Email.
+- Mobile number.
+- Department.
+- Designation.
+- District.
+- Reporting manager.
+- Joining date.
+- Employment status.
+- Profile photograph.
+- Permission level.
+
+An employee must never be able to access another employee's private workspace by changing a URL or modifying browser requests.
+
+If the employee account is inactive, suspended or not approved, prevent access and display an appropriate message.
+
+The Admin must be able to create employee accounts, assign departments, generate employee IDs and activate or deactivate accounts.
+
+Do not allow public employee registration.
+
+## 6. APPLICATION LAYOUT
+
+After login, display the following layout.
+
+### Left sidebar
+
+- Dashboard.
+- My Profile.
+- My Attendance.
+- My Daily Tasks.
+- Work Submission.
+- My Leads.
+- My Bookings.
+- Partner Onboarding.
+- My Performance.
+- My Work Credits.
+- Notifications.
+- Reports.
+- Leave Application.
+- Helpdesk.
+- Logout.
+
+Show only the features authorized for the employee's designation.
+
+### Top navigation
+
+- Doorbly logo.
+- Employee name.
+- Employee ID.
+- Department and designation.
+- Assigned district.
+- Current date and time (Indian Standard Time).
+- Notification icon.
+- Profile menu.
+
+### Main dashboard
+
+Display personalized information:
+
+- Today's assigned tasks.
+- Completed tasks.
+- Pending tasks.
+- Rejected submissions.
+- Approved productivity credits.
+- Daily target.
+- Target achievement percentage.
+- Important announcements.
+- Upcoming deadlines.
+- Performance summary.
+
+Do not display fake statistics. Show zero or an appropriate empty state when database records do not exist.
+
+## 7. DISTRICT MANAGEMENT
+
+Create a master database containing all 30 districts of Odisha.
+
+1. Angul
+2. Balangir
+3. Balasore
+4. Bargarh
+5. Bhadrak
+6. Boudh
+7. Cuttack
+8. Deogarh
+9. Dhenkanal
+10. Gajapati
+11. Ganjam
+12. Jagatsinghpur
+13. Jajpur
+14. Jharsuguda
+15. Kalahandi
+16. Kandhamal
+17. Kendrapara
+18. Keonjhar
+19. Khordha
+20. Koraput
+21. Malkangiri
+22. Mayurbhanj
+23. Nabarangpur
+24. Nayagarh
+25. Nuapada
+26. Puri
+27. Rayagada
+28. Sambalpur
+29. Subarnapur
+30. Sundargarh
+
+Every employee must be mapped to an assigned district or central department.
+
+Allow the Admin to transfer employees between districts with an audit record.
+
+## 8. DAILY REVENUE TARGET MANAGEMENT
+
+Doorbly's initial combined statewide daily service-subtotal target is ₹1,00,000.
+
+The target represents completed service value before applicable taxes.
+
+Create the following editable default district target allocations:
+
+| District | Daily Target |
+|---|---:|
+| Khordha | ₹7,000 |
+| Cuttack | ₹6,500 |
+| Ganjam | ₹5,500 |
+| Puri | ₹5,000 |
+| Sundargarh | ₹5,000 |
+| Balasore | ₹4,000 |
+| Sambalpur | ₹4,000 |
+| Mayurbhanj | ₹4,000 |
+| Jajpur | ₹4,000 |
+| Bhadrak | ₹3,500 |
+| Kendrapara | ₹3,500 |
+| Jagatsinghpur | ₹3,000 |
+| Angul | ₹3,500 |
+| Dhenkanal | ₹3,000 |
+| Keonjhar | ₹3,000 |
+| Bargarh | ₹3,000 |
+| Balangir | ₹3,000 |
+| Kalahandi | ₹3,000 |
+| Koraput | ₹3,000 |
+| Rayagada | ₹3,000 |
+| Nayagarh | ₹2,500 |
+| Gajapati | ₹2,000 |
+| Kandhamal | ₹2,000 |
+| Nuapada | ₹2,000 |
+| Subarnapur | ₹2,000 |
+| Boudh | ₹2,000 |
+| Deogarh | ₹2,000 |
+| Malkangiri | ₹2,000 |
+| Nabarangpur | ₹2,000 |
+| Jharsuguda | ₹2,000 |
+| TOTAL | ₹1,00,000 |
+
+All target values must be editable from Admin Panel.
+
+Allow the Admin to change daily, weekly and monthly targets.
+
+Calculate:
+
+- Target.
+- Actual completed service subtotal.
+- Pending target.
+- Achievement percentage.
+- Completed bookings.
+- Average booking value.
+- Cancellation percentage.
+- District ranking.
+
+Never count the same booking twice.
+
+Only count verified completed services according to the financial status and payment rules configured by Admin.
+
+## 9. TASK MANAGEMENT ENGINE
+
+Create a centralized task management system.
+
+Admin, District Manager and authorized Department Heads can:
+
+- Create tasks.
+- Assign tasks to employees.
+- Set priority.
+- Set deadline.
+- Set task value.
+- Define required evidence.
+- Assign recurring tasks.
+- Reassign pending tasks.
+- Review completed submissions.
+
+Task priority:
+
+- Critical.
+- High.
+- Medium.
+- Low.
+
+Task status:
+
+- Assigned.
+- In Progress.
+- Submitted.
+- Under Review.
+- Approved.
+- Rejected.
+- Reassigned.
+- Cancelled.
+
+Every task must have:
+
+- Unique Task ID.
+- Employee ID.
+- Department.
+- Designation.
+- District.
+- Task description.
+- Task value.
+- Assigned date.
+- Deadline.
+- Submission date.
+- Evidence.
+- Verification status.
+- Approver ID.
+- Approval comments.
+
+## 10. DEPARTMENT-WISE TASK MASTER
+
+Create an editable Task Value Master in the Admin Panel.
+
+Use the following initial productivity-credit values.
+
+These values are internal work measurement credits, not employee salary or guaranteed commission.
+
+### A. District Manager
+
+- District revenue review: ₹100, one/day.
+- Department performance review: ₹100, two/day.
+- Revenue opportunity identification: ₹100, five/day.
+- Corporate opportunity review: ₹200, three/day.
+- Business development meeting: ₹150, two/day.
+- Pending booking follow-up: ₹100, five/day.
+- Partner capacity review: ₹150, one/day.
+- Daily district report: ₹200, one/day.
+- Weekly improvement plan: ₹500, one/week.
+
+### B. District Coordinator
+
+- Attendance verification: ₹50, one/day.
+- Daily work allocation: ₹100, one/day.
+- Pending lead follow-up: ₹10, twenty/day.
+- Booking coordination: ₹20, ten/day.
+- Partner availability verification: ₹15, ten/day.
+- Booking status verification: ₹20, ten/day.
+- Submission verification round: ₹100.
+- Issue escalation: ₹20, five/day.
+- Daily consolidated report: ₹150.
+
+### C. HR Executive
+
+- Candidate sourcing: ₹10, fifteen/day.
+- Candidate screening: ₹20, eight/day.
+- Interview scheduling: ₹20, five/day.
+- Interview completion: ₹50, three/day.
+- Document verification: ₹50, three/day.
+- Approved employee onboarding: ₹150, one or two/day.
+- Attendance audit: ₹50.
+- Employee performance follow-up: ₹20, five/day.
+- Daily HR report: ₹100.
+
+### D. General Operations Tele Caller
+
+- Outbound customer call: ₹2, sixty/day.
+- Connected conversation: ₹5, twenty/day.
+- Qualified enquiry: ₹10, ten/day.
+- Booking confirmation: ₹30, five/day.
+- Follow-up call: ₹5, fifteen/day.
+- Pending booking recovery: ₹20, three/day.
+- Daily call report: ₹50.
+
+### E. Corporate Caller
+
+- Corporate prospect call: ₹3, forty/day.
+- Decision-maker conversation: ₹15, ten/day.
+- Qualified corporate lead: ₹30, five/day.
+- Meeting scheduled: ₹75, two/day.
+- Site inspection request: ₹100.
+- Quotation request: ₹100.
+- Verified corporate contract: ₹500, one/week.
+- Daily report: ₹100.
+
+### F. Partner Caller
+
+- Partner prospect call: ₹2, fifty/day.
+- Interested partner lead: ₹10, ten/day.
+- Qualified partner lead: ₹25, five/day.
+- Document collection: ₹30, three/day.
+- Verified application: ₹75, two/day.
+- Approved partner onboarding: ₹150.
+- Partner activation: ₹100.
+- Partner follow-up: ₹5, ten/day.
+- Daily report: ₹50.
+
+### G. Customer Support Executive
+
+- Customer ticket handled: ₹5, thirty/day.
+- Verified complaint resolution: ₹20, ten/day.
+- Booking assistance: ₹20, five/day.
+- Feedback collection: ₹10, ten/day.
+- Completion confirmation: ₹10, ten/day.
+- Payment follow-up: ₹15, five/day.
+- Repeat-service opportunity: ₹20, three/day.
+- Daily report: ₹75.
+
+### H. General Lead Generation Executive
+
+- Prospect contacted: ₹2, fifty/day.
+- Interested prospect: ₹10, ten/day.
+- Qualified lead: ₹15, eight/day.
+- Booking-ready lead: ₹25, five/day.
+- Confirmed booking: ₹50, two/day.
+- Follow-up: ₹5, fifteen/day.
+- Daily report: ₹50.
+
+### I. Residential Lead Generation Executive
+
+- Household prospect contacted: ₹2, fifty/day.
+- Interested household: ₹10, fifteen/day.
+- Qualified household lead: ₹15, ten/day.
+- Service requirement documented: ₹15, eight/day.
+- Booking-ready lead: ₹25, five/day.
+- Confirmed residential booking: ₹50, two/day.
+- Repeat customer follow-up: ₹5, ten/day.
+- Daily report: ₹50.
+
+### J. Corporate Lead Generation Executive
+
+- Corporate prospect researched: ₹3, thirty/day.
+- Organization contacted: ₹5, twenty/day.
+- Decision-maker verified: ₹20, five/day.
+- Qualified corporate lead: ₹30, five/day.
+- Meeting scheduled: ₹75, two/day.
+- Requirements documented: ₹50, two/day.
+- Quotation opportunity: ₹100.
+- Daily report: ₹75.
+
+### K. Technical Executive / IT Support Engineer
+
+- System health check: ₹100.
+- Booking flow verification: ₹50, two/day.
+- Notification verification: ₹50, two/day.
+- Technical ticket resolution: ₹50, five/day.
+- Database monitoring: ₹100.
+- Backup and security checks: ₹100.
+- Bug documentation: ₹30, three/day.
+- Daily technical report: ₹100.
+
+### L. Software Developer / Web Developer
+
+- Approved development task: ₹150, one or two/day.
+- Verified bug fix: ₹75, two/day.
+- UI/UX improvement: ₹100.
+- Database/API improvement: ₹150.
+- Code review: ₹100.
+- Testing and deployment verification: ₹100.
+- Technical documentation: ₹75.
+- Daily development report: ₹100.
+
+IMPORTANT TASK VALUE RULES:
+
+1. These credits are for internal productivity measurement only.
+2. They are not salary, statutory wages or automatic monetary entitlements.
+3. Salary and legally required employee compensation must be managed separately.
+4. Task credits must be awarded only after verification.
+5. Duplicate, fake or unsupported work receives zero credit.
+6. Task values and quantities must be editable by Admin.
+7. The system must prevent multiple credits for the same evidence and business outcome.
+8. Department heads cannot approve their own submissions.
+
+## 11. EMPLOYEE DAILY WORKSPACE
+
+Create the following screens.
+
+### My Tasks
+
+Display a list of assigned tasks with:
+
+- Task name.
+- Task ID.
+- Task value.
+- Priority.
+- Deadline.
+- Status.
+- Start task button.
+- Submit work button.
+
+### Work Submission
+
+Create a submission form with:
+
+- Task ID.
+- Work completed.
+- Number of completed activities.
+- Customer/lead/booking reference.
+- Work description.
+- Evidence upload.
+- Submission date and time.
+- Submit button.
+
+Allow JPG, PNG and PDF evidence uploads with file-size limits.
+
+### My Performance
+
+Show:
+
+- Assigned tasks.
+- Completed tasks.
+- Approved tasks.
+- Rejected tasks.
+- Productivity credits.
+- Daily target achievement.
+- Weekly performance.
+- Monthly performance.
+
+### My Work Credits
+
+Show an itemized ledger containing:
+
+- Date.
+- Task ID.
+- Task description.
+- Approved quantity.
+- Per-task value.
+- Total credits.
+- Approver.
+- Approval date.
+
+This is a productivity ledger, not a financial wallet.
+
+## 12. DEPARTMENT-SPECIFIC MODULES
+
+### General Operations CRM
+
+Create a CRM for:
+
+- Customer enquiries.
+- Customer calling records.
+- Lead status.
+- Follow-up dates.
+- Booking-ready leads.
+- Confirmed bookings.
+- Pending bookings.
+
+### Corporate Services CRM
+
+Create a business acquisition pipeline:
+
+New Prospect → Contacted → Interested → Qualified → Meeting Scheduled → Site Inspection → Quotation → Negotiation → Contract Won / Lost.
+
+Capture:
+
+- Organization name.
+- Business category.
+- Contact person.
+- Mobile.
+- Email.
+- Location.
+- Service requirements.
+- Estimated business value.
+- Next follow-up.
+- Assigned corporate employee.
+
+### Partner Onboarding
+
+Create a partner recruitment module:
+
+- Partner name.
+- Mobile.
+- District.
+- Block/locality.
+- Skills.
+- Service categories.
+- Experience.
+- Document verification.
+- Application status.
+- Approval status.
+- Activation status.
+
+### Customer Support
+
+Create a support ticket system with:
+
+- Ticket ID.
+- Customer ID.
+- Booking ID.
+- Complaint category.
+- Description.
+- Priority.
+- Assigned executive.
+- Resolution.
+- Customer confirmation.
+- Escalation status.
+
+### HR Management
+
+Create:
+
+- Employee database.
+- Recruitment pipeline.
+- Interview records.
+- Document verification.
+- Employee onboarding.
+- Attendance.
+- Leave.
+- Employee status.
+- Performance review.
+
+### Technical Management
+
+Create:
+
+- Bug tracking.
+- Development task management.
+- IT support tickets.
+- Priority.
+- Assigned developer.
+- Testing.
+- Code review.
+- Deployment history.
+
+## 13. REMOTE ATTENDANCE
+
+Create an attendance system with:
+
+- Login time.
+- Logout time.
+- Total recorded working time.
+- Break records.
+- Attendance status.
+- Leave requests.
+- Supervisor approval.
+
+Attendance statuses:
+
+- Present.
+- Late.
+- Half Day.
+- Absent.
+- Approved Leave.
+- Weekly Off.
+
+Use Asia/Kolkata timezone.
+
+Do not use continuous GPS tracking, hidden screenshots or invasive monitoring.
+
+If location verification is enabled, it must be optional, transparent, consent-based and limited to the approved attendance event.
+
+Attendance must not be automatically treated as proof of productivity.
+
+## 14. WORK APPROVAL SYSTEM
+
+Create an independent verification process.
+
+Employee → Department Head → District Coordinator (where applicable) → District Manager (where applicable) → Central Admin.
+
+Not every task requires every approval level. Configure the approval chain by task category and employee role.
+
+After approval:
+
+- Update employee productivity credits.
+- Update department report.
+- Update district report.
+- Record approver.
+- Record approval date.
+- Preserve the audit trail.
+
+Rejected tasks must contain a mandatory rejection reason.
+
+Approved records must not be silently editable.
+
+Provide controlled correction and reversal entries with administrator authorization and audit history.
+
+## 15. DISTRICT MANAGER DASHBOARD
+
+District Managers should have access to:
+
+- District target.
+- Actual service subtotal.
+- Revenue gap.
+- Employee attendance.
+- Department performance.
+- Employee work credits.
+- Customer lead pipeline.
+- Corporate sales pipeline.
+- Partner availability.
+- Completed bookings.
+- Pending bookings.
+- Customer complaints.
+- Payment reconciliation.
+- Daily district report.
+
+Allow the District Manager to allocate tasks and review submissions within authorized district boundaries.
+
+## 16. DISTRICT COORDINATOR DASHBOARD
+
+Display:
+
+- Today's assigned team.
+- Attendance.
+- Tasks assigned.
+- Submissions awaiting verification.
+- Pending follow-ups.
+- Customer enquiries.
+- Partner availability.
+- Booking coordination.
+- Department reports.
+- Escalations.
+
+Allow the DC to prepare a consolidated daily report for the District Manager.
+
+## 17. CENTRAL ADMIN PANEL
+
+Create a separate secure Admin Panel within the same application.
+
+Only authorized administrators can access it.
+
+Admin modules:
+
+1. Executive Dashboard.
+2. Employee Management.
+3. Department Management.
+4. Designation Management.
+5. District Management.
+6. Task Value Master.
+7. Daily Task Allocation.
+8. Work Submission Approval.
+9. Attendance Management.
+10. Lead Management.
+11. Corporate CRM.
+12. Partner Onboarding.
+13. Booking Monitoring.
+14. Revenue Management.
+15. Customer Support Monitoring.
+16. HR Management.
+17. Technical Management.
+18. Reports and Analytics.
+19. System Settings.
+20. Audit Logs.
+
+Admin must be able to:
+
+- Create and deactivate employees.
+- Assign roles and permissions.
+- Change reporting managers.
+- Assign districts.
+- Create and modify tasks.
+- Change productivity credit values.
+- Set daily revenue targets.
+- Approve exceptional submissions.
+- Generate reports.
+- Export authorized reports to Excel and CSV.
+- Publish announcements.
+- Configure working hours.
+- Configure approval workflows.
+
+## 18. REVENUE MANAGEMENT
+
+Integrate with the existing Doorbly booking database.
+
+Do not create duplicate booking records.
+
+Use the existing booking ID as the primary business reference.
+
+Track:
+
+- Service subtotal.
+- Applicable tax.
+- Customer payable amount.
+- Customer payment status.
+- Partner service payout.
+- Doorbly commission.
+- Refund.
+- Cancellation.
+- Reconciliation status.
+
+Use the existing Doorbly pricing model, where the proposed 20% Doorbly markup is incorporated into the customer-facing service price.
+
+Do not automatically treat the entire customer subtotal as Doorbly revenue or profit.
+
+Do not allow employees to alter service prices or financial transactions without authorized approval.
+
+Create separate revenue reports for completed, paid, unpaid, refunded and cancelled bookings.
+
+## 19. PERFORMANCE ANALYTICS
+
+Create charts and reports for:
+
+- Daily employee productivity.
+- Weekly employee productivity.
+- Monthly employee productivity.
+- Department performance.
+- District revenue.
+- Lead conversion.
+- Corporate contract pipeline.
+- Partner onboarding.
+- Completed bookings.
+- Average booking value.
+- Complaint resolution.
+- Task approval rate.
+
+Employee performance score:
+
+Approved Work Credits ÷ Assigned Work Credits × 100.
+
+Display these classifications:
+
+- 90–100%: Excellent.
+- 75–89%: Good.
+- 60–74%: Needs Improvement.
+- 40–59%: Poor.
+- Below 40%: Critical.
+
+Revenue achievement must be measured separately from productivity credits.
+
+## 20. NOTIFICATIONS
+
+Create notifications for:
+
+- New task assigned.
+- Task deadline approaching.
+- Task overdue.
+- Submission approved.
+- Submission rejected.
+- New lead assigned.
+- New booking assigned.
+- Customer complaint escalation.
+- Leave approved/rejected.
+- New announcement.
+- Daily reporting deadline.
+
+Use in-app notifications first. Integrate Firebase Cloud Messaging where configured.
+
+Do not make paid messaging services mandatory.
+
+## 21. SECURITY AND ACCESS CONTROL
+
+Implement strict role-based access control and Supabase Row Level Security.
+
+Rules:
+
+- Employees can access their own profiles and tasks.
+- Employees can submit their own work.
+- Employees cannot approve their own work.
+- Department Heads can access authorized department records.
+- District Coordinators can access assigned district records.
+- District Managers can access their assigned district.
+- Central Department Heads can access their authorized department scope.
+- Admin can access authorized statewide management functions.
+- Financial modifications must require specific financial permissions.
+
+Never rely only on hiding frontend buttons for security.
+
+Validate permissions on the backend.
+
+Use secure database policies, protected server-side operations, input validation, rate limiting where appropriate, and audit logging.
+
+## 22. DATABASE STRUCTURE
+
+Create safe SQL migrations for the following tables, reusing existing compatible tables wherever possible:
+
+1. departments
+2. job_designations
+3. staff_profiles
+4. districts
+5. district_assignments
+6. daily_tasks
+7. task_submissions
+8. task_approvals
+9. task_value_master
+10. employee_work_credits
+11. employee_attendance
+12. employee_leave
+13. leads
+14. lead_activities
+15. corporate_prospects
+16. partner_applications
+17. booking_pipeline
+18. daily_district_targets
+19. department_daily_reports
+20. complaint_tickets
+21. staff_notifications
+22. system_announcements
+23. system_audit_logs
+
+Create appropriate:
+
+- Primary keys.
+- Foreign keys.
+- Unique constraints.
+- Indexes.
+- Timestamps.
+- Status constraints.
+- RLS policies.
+- Database functions where required.
+
+All sensitive approval and financial actions must be validated on the server or through secure database functions.
+
+## 23. DAILY REPORT AUTOMATION
+
+Generate department-wise daily reports.
+
+Every report must contain:
+
+- Department name.
+- District.
+- Employee name.
+- Employee ID.
+- Assigned tasks.
+- Completed tasks.
+- Pending tasks.
+- Approved tasks.
+- Rejected tasks.
+- Productivity credits.
+- Leads generated.
+- Bookings generated.
+- Revenue attributed.
+- Problems encountered.
+- Next-day plan.
+
+Generate a consolidated district report for the District Manager and a statewide report for the Director.
+
+Do not double-count revenue when multiple employees participate in one booking. Attribute revenue to one booking record and maintain employee contribution separately.
+
+## 24. IMPORTANT DEVELOPMENT RULES
+
+This project must be developed as a real working application.
+
+DO NOT:
+
+- Use mock employee data in production.
+- Use fake revenue figures.
+- Create buttons that do nothing.
+- Hardcode employee names or district assignments.
+- Use local storage as the primary database.
+- expose administrative secrets in frontend code.
+- Allow employees to manipulate productivity credits.
+- Duplicate existing booking records.
+- Delete existing Supabase tables or data.
+- Bypass authentication.
+- Grant every employee administrator permissions.
+
+If the database is empty, show clean empty states and instructions for authorized Admin setup.
+
+## 25. DEVELOPMENT AND DELIVERY
+
+Build the application in logical modules.
+
+Development order:
+
+1. Project setup and responsive design.
+2. Firebase login and Supabase profile integration.
+3. Role-based routing and permissions.
+4. Employee and department management.
+5. District management.
+6. Task assignment engine.
+7. Work submission and approvals.
+8. Employee performance and productivity credits.
+9. Lead and CRM modules.
+10. Partner onboarding.
+11. Customer support.
+12. Attendance.
+13. Revenue integration.
+14. District Manager dashboard.
+15. Central Admin Panel.
+16. Notifications.
+17. Reports and exports.
+18. Security and testing.
+
+Deliver:
+
+- Complete React application source code.
+- All required frontend components.
+- Supabase SQL migration scripts.
+- Firebase configuration instructions.
+- Supabase RLS policies.
+- Environment variable template.
+- Vercel deployment instructions.
+- Testing instructions.
+- Admin setup instructions.
+
+Create reusable components and maintain a clean project structure.
+
+Before declaring the application complete, test login, authorization, task assignment, submissions, approvals, credit calculations, district isolation, reporting and financial reconciliation.
+
+If a backend integration cannot be completed because credentials or existing schema information are missing, clearly identify what is required. Do not simulate successful backend operations.
+
+**FINAL INSTRUCTION:**
+
+Build Doorbly as a professional, secure, scalable, multi-district remote employee management platform that can support hundreds or thousands of employees across Odisha.
+
+The final result must be fully responsive, database-connected, role-based and ready for real-world operational testing.
+
+Prioritize functionality, security, maintainability, performance and ease of use over decorative design.
