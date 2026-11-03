@@ -144,7 +144,7 @@ export const DailyReportsView: React.FC<DailyReportsViewProps> = ({ currentUser 
       )}
 
       {/* Reports List */}
-      <div className="space-y-4">
+      <div className="space-y-4 max-h-[720px] overflow-y-auto custom-scrollbar pr-1">
         {reports.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-xs text-gray-500">
             No daily reports generated yet for today. Click "Generate Today's Report" to auto-compile your department deliverables.

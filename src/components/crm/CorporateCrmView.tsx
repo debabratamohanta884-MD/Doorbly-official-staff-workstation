@@ -152,10 +152,10 @@ export const CorporateCrmView: React.FC<CorporateCrmViewProps> = ({ currentUser 
       </div>
 
       {/* 9-Stage Pipeline Filter Bar */}
-      <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-xs flex items-center space-x-1 overflow-x-auto text-xs">
+      <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-xs flex items-center space-x-1.5 overflow-x-auto horizontal-scroll-container text-xs pb-2">
         <button
           onClick={() => setSelectedStage('all')}
-          className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap transition shrink-0 cursor-pointer ${
             selectedStage === 'all'
               ? 'bg-[#0F766E] text-white'
               : 'text-gray-600 hover:bg-gray-100'
@@ -169,7 +169,7 @@ export const CorporateCrmView: React.FC<CorporateCrmViewProps> = ({ currentUser 
             <button
               key={s.id}
               onClick={() => setSelectedStage(s.id)}
-              className={`px-3 py-1.5 rounded-md font-medium whitespace-nowrap transition ${
+              className={`px-3 py-1.5 rounded-md font-medium whitespace-nowrap transition shrink-0 cursor-pointer ${
                 selectedStage === s.id
                   ? 'bg-[#0F766E] text-white font-semibold'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -182,7 +182,7 @@ export const CorporateCrmView: React.FC<CorporateCrmViewProps> = ({ currentUser 
       </div>
 
       {/* Prospect Deal Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[720px] overflow-y-auto custom-scrollbar pr-1">
         {filteredProspects.map((deal) => (
           <div
             key={deal.id}

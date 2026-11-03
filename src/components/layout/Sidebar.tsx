@@ -25,6 +25,7 @@ import {
   CalendarX,
   Megaphone,
   Sliders,
+  Wallet,
   LogOut
 } from 'lucide-react';
 import { StaffProfile, SystemRole, DesignationId } from '../../types/doorbly';
@@ -49,6 +50,7 @@ export type ActiveTab =
   | 'reports'
   | 'leave'
   | 'announcements'
+  | 'wallet'
   | 'admin_panel';
 
 interface SidebarProps {
@@ -108,6 +110,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'My Attendance',
       icon: Clock,
       visible: true
+    },
+    {
+      id: 'wallet' as ActiveTab,
+      label: 'My Individual Wallet',
+      icon: Wallet,
+      visible: true,
+      highlight: true
     },
     {
       id: 'leads' as ActiveTab,
@@ -222,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation List */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5 text-xs">
+      <nav className="flex-1 overflow-y-auto custom-scrollbar px-2 py-3 space-y-0.5 text-xs">
         {navItems
           .filter(item => item.visible)
           .map((item) => {

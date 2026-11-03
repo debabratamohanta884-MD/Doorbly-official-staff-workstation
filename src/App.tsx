@@ -28,6 +28,7 @@ import { DailyReportsView } from './components/reports/DailyReportsView';
 import { AnnouncementsView } from './components/announcements/AnnouncementsView';
 import { MyProfileView } from './components/profile/MyProfileView';
 import { CentralAdminPanel } from './components/admin/CentralAdminPanel';
+import { StaffWalletView } from './components/wallet/StaffWalletView';
 import { HrManagementView, TechnicalManagementView } from './components/common/TechnicalHrViews';
 import { BackendStatusModal } from './components/common/BackendStatusModal';
 
@@ -132,7 +133,7 @@ export default function App() {
         />
 
         {/* Dynamic Workspace Container */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {activeTab === 'dashboard' && renderDashboard()}
           {activeTab === 'tasks' && <MyTasksView currentUser={currentUser} />}
           {activeTab === 'submissions' && <MyTasksView currentUser={currentUser} />}
@@ -152,6 +153,7 @@ export default function App() {
           {activeTab === 'reports' && <DailyReportsView currentUser={currentUser} />}
           {activeTab === 'announcements' && <AnnouncementsView currentUser={currentUser} />}
           {activeTab === 'profile' && <MyProfileView currentUser={currentUser} />}
+          {activeTab === 'wallet' && <StaffWalletView currentUser={currentUser} />}
           {activeTab === 'admin_panel' && <CentralAdminPanel currentUser={currentUser} />}
         </main>
       </div>

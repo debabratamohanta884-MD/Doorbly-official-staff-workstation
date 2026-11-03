@@ -103,10 +103,10 @@ export const WorkApprovalQueue: React.FC<WorkApprovalQueueProps> = ({ currentUse
           </p>
         </div>
 
-        <div className="flex items-center space-x-1.5 bg-[#F7F9FA] p-1 rounded-lg border border-gray-200 text-xs">
+        <div className="flex items-center space-x-1.5 bg-[#F7F9FA] p-1 rounded-lg border border-gray-200 text-xs overflow-x-auto horizontal-scroll-container">
           <button
             onClick={() => setFilterStatus('pending')}
-            className={`px-3 py-1.5 rounded-md font-semibold transition ${
+            className={`px-3 py-1.5 rounded-md font-semibold transition shrink-0 cursor-pointer ${
               filterStatus === 'pending'
                 ? 'bg-[#0F766E] text-white shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'
@@ -116,7 +116,7 @@ export const WorkApprovalQueue: React.FC<WorkApprovalQueueProps> = ({ currentUse
           </button>
           <button
             onClick={() => setFilterStatus('approved')}
-            className={`px-3 py-1.5 rounded-md font-semibold transition ${
+            className={`px-3 py-1.5 rounded-md font-semibold transition shrink-0 cursor-pointer ${
               filterStatus === 'approved'
                 ? 'bg-[#0F766E] text-white shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'
@@ -126,7 +126,7 @@ export const WorkApprovalQueue: React.FC<WorkApprovalQueueProps> = ({ currentUse
           </button>
           <button
             onClick={() => setFilterStatus('rejected')}
-            className={`px-3 py-1.5 rounded-md font-semibold transition ${
+            className={`px-3 py-1.5 rounded-md font-semibold transition shrink-0 cursor-pointer ${
               filterStatus === 'rejected'
                 ? 'bg-[#0F766E] text-white shadow-xs'
                 : 'text-gray-600 hover:text-gray-900'

@@ -423,3 +423,184 @@ export interface SystemAuditLog {
   ipAddress?: string;
   timestamp: string;
 }
+
+// 24. HR Candidate & Recruitment Pipeline
+export type CandidateStage =
+  | 'Applied'
+  | 'Screening'
+  | 'Interview Scheduled'
+  | 'Document Verification'
+  | 'Offer Extended'
+  | 'Onboarded'
+  | 'Rejected';
+
+export interface JobCandidate {
+  id: string;
+  fullName: string;
+  mobile: string;
+  email: string;
+  appliedDesignationId: string;
+  appliedDesignationTitle: string;
+  districtId: string;
+  districtName: string;
+  stage: CandidateStage;
+  screeningScore: number;
+  interviewNotes?: string;
+  documentsVerified: boolean;
+  appliedDate: string;
+  updatedAt: string;
+}
+
+// 25. Financial Transactions & Accounts Control
+export interface FinancialTransaction {
+  id: string;
+  referenceId: string; // e.g. TXN-OD-9012
+  type:
+    | 'booking_revenue'
+    | 'commission'
+    | 'partner_payout'
+    | 'partner_subscription'
+    | 'partner_withdrawal'
+    | 'salary_disbursement'
+    | 'business_expense'
+    | 'tax_payment'
+    | 'manual_adjustment';
+  amount: number;
+  direction: 'credit' | 'debit';
+  description: string;
+  districtId?: string;
+  districtName?: string;
+  departmentId?: string;
+  departmentName?: string;
+  actorId: string;
+  actorName: string;
+  status: 'completed' | 'pending' | 'reversed';
+  createdAt: string;
+}
+
+// 26. Staff Individual Wallet
+export interface StaffBankAccountDetails {
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  upiId?: string;
+  isKycVerified: boolean;
+}
+
+export interface StaffWallet {
+  id: string; // wlt-<staffId>
+  staffId: string;
+  employeeId: string;
+  fullName: string;
+  departmentId: string;
+  departmentName: string;
+  designationTitle: string;
+  districtName: string;
+  totalEarnings: number; // Cumulative earned and approved
+  availableBalance: number; // Spendable/withdrawable balance
+  pendingEarnings: number; // In-progress / submitted works not yet approved
+  approvedEarnings: number; // Approved work earnings
+  totalWithdrawnAmount: number; // Total successfully paid out
+  totalAdminAdjustments: number; // Net manual admin adjustments
+  totalCompletedWork: number; // Number of approved completed works
+  currentMonthEarnings: number; // Earned in current calendar month
+  bankAccountDetails?: StaffBankAccountDetails;
+  updatedAt: string;
+}
+
+export type WalletTransactionType =
+  | 'work_credit'
+  | 'incentive_credit'
+  | 'adjustment_credit'
+  | 'adjustment_debit'
+  | 'withdrawal'
+  | 'reversal';
+
+export interface StaffWalletTransaction {
+  id: string;
+  transactionId: string; // e.g. WLT-TXN-202611-001
+  staffId: string;
+  employeeId: string;
+  date: string; // YYYY-MM-DD HH:mm:ss
+  workId?: string; // e.g. WRK-OD-001
+  workDescription: string;
+  category: string; // e.g. 'Work Approval', 'Special Incentive', 'Admin Adjustment', 'Payout'
+  type: WalletTransactionType;
+  credit: number;
+  debit: number;
+  runningBalance: number;
+  status: 'completed' | 'pending' | 'reversed' | 'failed';
+  adminRemarks?: string;
+  authorizedBy?: string;
+  createdAt: string;
+}
+
+export type StaffWorkStatus =
+  | 'assigned'
+  | 'accepted'
+  | 'in_progress'
+  | 'completed'
+  | 'verified'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled';
+
+export interface StaffWorkAssignment {
+  id: string;
+  workCode: string; // e.g. WRK-OD-202611-001
+  title: string;
+  description: string;
+  category: string;
+  assignedStaffIds: string[];
+  assignedStaffNames: string[];
+  departmentId: string;
+  departmentName: string;
+  districtId: string;
+  districtName: string;
+  assignedDate: string; // YYYY-MM-DD
+  completionDeadline: string; // YYYY-MM-DD
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  customerWorkValue: number; // Customer/Company billed value (NOT credited to staff)
+  staffEarningAmount: number; // Configured employee earning amount credited upon approval
+  incentiveAmount: number; // Extra approved bonus/incentive
+  status: StaffWorkStatus;
+  isCredited: boolean; // Idempotency protection against duplicate crediting
+  creditedTransactionId?: string;
+  submissionNotes?: string;
+  evidenceUrl?: string;
+  evidenceFileName?: string;
+  submittedAt?: string;
+  completedAt?: string;
+  approvedAt?: string;
+  approvedByStaffId?: string;
+  approvedByName?: string;
+  rejectionReason?: string;
+  adminRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type WithdrawalStatus = 'pending' | 'approved' | 'processing' | 'completed' | 'rejected';
+
+export interface StaffWithdrawalRequest {
+  id: string;
+  withdrawalCode: string; // e.g. WDR-OD-001
+  staffId: string;
+  employeeId: string;
+  employeeName: string;
+  departmentName: string;
+  requestedAmount: number;
+  payoutAccount: StaffBankAccountDetails;
+  isKycVerified: boolean;
+  status: WithdrawalStatus;
+  requestedAt: string;
+  reviewedAt?: string;
+  reviewedByStaffId?: string;
+  reviewedByName?: string;
+  payoutMode?: 'IMPS' | 'NEFT' | 'UPI' | 'Direct Bank Transfer';
+  utrReference?: string;
+  adminRemarks?: string;
+  rejectionReason?: string;
+  processedAt?: string;
+}

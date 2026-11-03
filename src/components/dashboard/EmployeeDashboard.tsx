@@ -17,7 +17,8 @@ import {
   CheckSquare,
   AlertTriangle,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Wallet
 } from 'lucide-react';
 import { StaffProfile, DailyTask, TaskSubmission, WorkCreditEntry, SystemAnnouncement } from '../../types/doorbly';
 import { StorageEngine } from '../../services/storageEngine';
@@ -88,6 +89,13 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUse
             <span>View Assigned Tasks</span>
           </button>
           <button
+            onClick={() => onNavigate('wallet')}
+            className="px-3.5 py-2 bg-teal-800 hover:bg-teal-900 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 shadow-xs"
+          >
+            <Wallet className="w-3.5 h-3.5 text-teal-300" />
+            <span>My Wallet (₹{StorageEngine.getStaffWallet(currentUser.id).availableBalance.toLocaleString('en-IN')})</span>
+          </button>
+          <button
             onClick={() => onNavigate('attendance')}
             className="px-3.5 py-2 bg-[#F7F9FA] hover:bg-gray-100 text-gray-700 border border-gray-200 text-xs font-semibold rounded-lg transition flex items-center space-x-1.5"
           >
@@ -96,6 +104,43 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUse
           </button>
         </div>
       </div>
+
+      {/* Staff Wallet Quick Access Card */}
+      {(() => {
+        const staffWallet = StorageEngine.getStaffWallet(currentUser.id);
+        return (
+          <div className="bg-gradient-to-r from-[#123C45] to-[#0F766E] text-white rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <Wallet className="w-5 h-5 text-teal-300" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-teal-200 uppercase tracking-wider block">
+                  Staff Individual Wallet
+                </span>
+                <div className="flex items-baseline space-x-2">
+                  <span className="text-xl font-bold font-mono">₹{staffWallet.availableBalance.toLocaleString('en-IN')}</span>
+                  <span className="text-xs text-teal-100">available balance</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 text-xs">
+              <div className="hidden md:block text-right text-teal-100">
+                <div>Total Lifetime Earnings: <span className="font-bold font-mono text-white">₹{staffWallet.totalEarnings.toLocaleString('en-IN')}</span></div>
+                <div className="text-[10px] text-teal-200">Pending: ₹{staffWallet.pendingEarnings.toLocaleString('en-IN')} • Completed Works: {staffWallet.totalCompletedWork}</div>
+              </div>
+              <button
+                onClick={() => onNavigate('wallet')}
+                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-xs cursor-pointer"
+              >
+                <span>Open Wallet & Payouts</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">

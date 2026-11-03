@@ -134,39 +134,86 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Notifications Dropdown */}
         <div className="relative">
-          <button
-            onClick={() => setShowNotifMenu(!showNotifMenu)}
-            className="p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition relative"
-            title="System Announcements & Notifications"
-          >
-            <Bell className="w-5 h-5" />
-            {announcements.length > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-            )}
-          </button>
+          {(() => {
+            const staffNotifs = StorageEngine.getStaffNotifications(currentUser.id);
+            const unreadCount = staffNotifs.filter(n => !n.isRead).length;
+            const hasActivity = unreadCount > 0 || announcements.length > 0;
 
-          {showNotifMenu && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50 text-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <span className="font-semibold text-gray-800">State Announcements</span>
-                <span className="text-[10px] bg-teal-50 text-[#0F766E] px-1.5 py-0.5 rounded font-medium">
-                  {announcements.length} active
-                </span>
-              </div>
-              <div className="max-h-64 overflow-y-auto mt-2 space-y-2">
-                {announcements.map((anc) => (
-                  <div key={anc.id} className="p-2 rounded bg-[#F7F9FA] border border-gray-100">
-                    <p className="font-semibold text-gray-800 text-[12px]">{anc.title}</p>
-                    <p className="text-gray-600 mt-0.5 leading-relaxed text-[11px]">{anc.content}</p>
-                    <div className="mt-1 flex items-center justify-between text-[10px] text-gray-400">
-                      <span>{anc.publishedByName}</span>
-                      <span>Today</span>
+            return (
+              <>
+                <button
+                  onClick={() => setShowNotifMenu(!showNotifMenu)}
+                  className="p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition relative cursor-pointer"
+                  title="System Announcements & Wallet Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  {hasActivity && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  )}
+                </button>
+
+                {showNotifMenu && (
+                  <div className="absolute right-0 mt-2 w-84 bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50 text-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                      <span className="font-bold text-gray-900">Notifications & Alerts</span>
+                      {staffNotifs.length > 0 && (
+                        <button
+                          onClick={() => {
+                            StorageEngine.markAllNotificationsRead(currentUser.id);
+                            setShowNotifMenu(false);
+                          }}
+                          className="text-[10px] text-teal-700 hover:underline font-semibold"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="max-h-72 overflow-y-auto mt-2 space-y-2 custom-scrollbar">
+                      {/* Personal Staff Notifications */}
+                      {staffNotifs.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => StorageEngine.markNotificationRead(n.id)}
+                          className={`p-2 rounded border cursor-pointer transition ${
+                            n.isRead
+                              ? 'bg-gray-50/70 border-gray-100 text-gray-600'
+                              : 'bg-teal-50/70 border-teal-200 text-gray-800'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-[11px] text-gray-900">{n.title}</p>
+                            {!n.isRead && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#0F766E]" />
+                            )}
+                          </div>
+                          <p className="text-gray-600 mt-0.5 leading-relaxed text-[10px]">{n.message}</p>
+                          <div className="mt-1 text-[9px] text-gray-400 font-mono">
+                            {n.createdAt.slice(0, 16).replace('T', ' ')}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* State Announcements */}
+                      {announcements.map((anc) => (
+                        <div key={anc.id} className="p-2 rounded bg-gray-50 border border-gray-100">
+                          <span className="text-[9px] uppercase font-bold text-teal-700 bg-teal-50 px-1 rounded">
+                            Announcement
+                          </span>
+                          <p className="font-semibold text-gray-900 text-[11px] mt-0.5">{anc.title}</p>
+                          <p className="text-gray-600 mt-0.5 leading-relaxed text-[10px]">{anc.content}</p>
+                        </div>
+                      ))}
+
+                      {staffNotifs.length === 0 && announcements.length === 0 && (
+                        <p className="text-center text-gray-400 py-4 text-[11px]">No active notifications.</p>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Quick Role Switcher (Crucial for testing all 12 designations + DM + DC + Admin) */}
@@ -211,9 +258,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="mt-2.5">
                 <div className="flex items-center justify-between pb-1.5">
                   <span className="text-[11px] font-semibold text-gray-600">
-                    Switch Test Persona (12 Roles)
+                    Staff Account Switcher
                   </span>
-                  <span className="text-[10px] text-gray-400 font-normal">1-Click Test</span>
+                  <span className="text-[10px] text-gray-400 font-normal">Active Profiles</span>
                 </div>
                 <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
                   {allStaff.map((staff) => {

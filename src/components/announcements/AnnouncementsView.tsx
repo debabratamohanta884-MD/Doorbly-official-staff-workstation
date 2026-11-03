@@ -79,7 +79,7 @@ export const AnnouncementsView: React.FC<AnnouncementsViewProps> = ({ currentUse
       </div>
 
       {/* Announcements List */}
-      <div className="space-y-4">
+      <div className="space-y-4 max-h-[720px] overflow-y-auto custom-scrollbar pr-1">
         {announcements.map((anc) => (
           <div
             key={anc.id}

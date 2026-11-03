@@ -217,28 +217,29 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
               </form>
             </div>
 
-            {/* Quick Demo Personas Selector */}
+            {/* Authorized Staff Profiles */}
             <div className="mt-6 pt-4 border-t border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-semibold text-gray-600 uppercase tracking-wide">
-                  Quick Test Switcher (Select Any of 12 Roles)
+                  Authorized Staff Directory
                 </span>
                 <span className="text-[10px] text-gray-400">Click to fill</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-[#F7F9FA] rounded border border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto p-1 bg-[#F7F9FA] rounded border border-gray-200">
                 {allStaff.map((staff) => (
                   <button
                     key={staff.id}
                     type="button"
                     onClick={() => handleQuickSelect(staff)}
-                    className={`text-left p-1.5 rounded text-[11px] border transition truncate ${
+                    className={`text-left p-2 rounded text-[11px] border transition truncate ${
                       employeeId === staff.employeeId
                         ? 'bg-teal-50 border-teal-400 text-[#0F766E] font-semibold'
                         : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
-                    <p className="truncate font-medium">{staff.fullName}</p>
-                    <p className="text-[9px] text-gray-500 truncate">{staff.designationTitle}</p>
+                    <p className="truncate font-semibold text-gray-900">{staff.fullName}</p>
+                    <p className="text-[10px] text-gray-500 truncate">{staff.designationTitle}</p>
+                    <p className="text-[9px] font-mono text-[#0F766E] mt-0.5">{staff.employeeId} • {staff.districtName}</p>
                   </button>
                 ))}
               </div>

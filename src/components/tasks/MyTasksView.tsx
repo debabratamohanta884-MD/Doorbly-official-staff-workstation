@@ -148,7 +148,7 @@ export const MyTasksView: React.FC<MyTasksViewProps> = ({ currentUser }) => {
       </div>
 
       {/* Task Cards List */}
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[720px] overflow-y-auto custom-scrollbar pr-1">
         {filteredTasks.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-xs text-gray-500">
             No daily tasks match the selected criteria.

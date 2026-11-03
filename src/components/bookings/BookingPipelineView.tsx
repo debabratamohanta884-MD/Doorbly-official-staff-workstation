@@ -186,9 +186,9 @@ export const BookingPipelineView: React.FC<BookingPipelineViewProps> = ({ curren
 
       {/* Bookings Table */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto horizontal-scroll-container max-h-[550px] overflow-y-auto custom-scrollbar">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F7F9FA] text-gray-600 border-b border-gray-200 font-semibold">
+            <thead className="bg-[#F7F9FA] text-gray-600 border-b border-gray-200 font-semibold sticky top-0 z-10 shadow-xs">
               <tr>
                 <th className="px-4 py-3">Booking Code</th>
                 <th className="px-4 py-3">Customer & Contact</th>

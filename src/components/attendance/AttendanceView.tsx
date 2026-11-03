@@ -95,14 +95,19 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ currentUser }) =
     setLeaveSuccess(null);
     if (!leaveReason.trim()) return;
 
-    // Record leave audit
-    StorageEngine.logAudit(
-      currentUser.id,
-      currentUser.fullName,
-      currentUser.systemRole,
-      'APPLY_LEAVE',
-      'Attendance & Leave',
-      `Applied for ${leaveType.toUpperCase()} leave from ${startDate} to ${endDate}. Reason: ${leaveReason}`
+    // Persist leave application
+    StorageEngine.applyLeave(
+      {
+        staffId: currentUser.id,
+        employeeId: currentUser.employeeId,
+        employeeName: currentUser.fullName,
+        leaveType,
+        startDate,
+        endDate,
+        totalDays: 1,
+        reason: leaveReason.trim()
+      },
+      currentUser
     );
 
     setLeaveSuccess('Leave application successfully submitted for supervisor approval.');
@@ -249,9 +254,9 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ currentUser }) =
           </span>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto horizontal-scroll-container max-h-[500px] overflow-y-auto custom-scrollbar">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F7F9FA] text-gray-600 border-b border-gray-200 font-semibold">
+            <thead className="bg-[#F7F9FA] text-gray-600 border-b border-gray-200 font-semibold sticky top-0 z-10 shadow-xs">
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Login Time (IST)</th>

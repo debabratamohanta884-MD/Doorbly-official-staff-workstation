@@ -16,7 +16,8 @@ import {
   MapPin,
   CalendarCheck,
   ShieldCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Wallet
 } from 'lucide-react';
 import { StaffProfile } from '../../types/doorbly';
 import { StorageEngine } from '../../services/storageEngine';
@@ -70,6 +71,13 @@ export const DistrictCoordinatorDashboard: React.FC<DistrictCoordinatorDashboard
           >
             <FileCheck className="w-3.5 h-3.5" />
             <span>Verify Submissions ({pendingSubmissions.length})</span>
+          </button>
+          <button
+            onClick={() => onNavigate('wallet')}
+            className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-bold rounded-lg transition flex items-center space-x-1.5 shadow-xs"
+          >
+            <Wallet className="w-3.5 h-3.5 text-slate-950" />
+            <span>My Wallet (₹{StorageEngine.getStaffWallet(currentUser.id).availableBalance.toLocaleString('en-IN')})</span>
           </button>
           <button
             onClick={() => onNavigate('reports')}

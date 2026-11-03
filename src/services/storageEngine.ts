@@ -27,7 +27,20 @@ import {
   PartnerApplicationStatus,
   BookingStatus,
   PaymentStatus,
-  TicketStatus
+  TicketStatus,
+  JobCandidate,
+  LeaveRequest,
+  LeaveStatus,
+  FinancialTransaction,
+  StaffWallet,
+  StaffWalletTransaction,
+  StaffWorkAssignment,
+  StaffWithdrawalRequest,
+  StaffBankAccountDetails,
+  StaffWorkStatus,
+  WithdrawalStatus,
+  WalletTransactionType,
+  StaffNotification
 } from '../types/doorbly';
 
 import { ODISHA_DISTRICTS_INITIAL } from '../constants/districts';
@@ -45,10 +58,16 @@ import {
   INITIAL_BOOKINGS,
   INITIAL_COMPLAINT_TICKETS,
   INITIAL_ANNOUNCEMENTS,
-  INITIAL_AUDIT_LOGS
+  INITIAL_AUDIT_LOGS,
+  INITIAL_WORK_ASSIGNMENTS,
+  INITIAL_WALLETS,
+  INITIAL_WALLET_TXNS,
+  INITIAL_WITHDRAWALS,
+  INITIAL_NOTIFICATIONS
 } from '../constants/mockSeedData';
 
 const STORAGE_KEYS = {
+  VERSION: 'doorbly_storage_version',
   STAFF: 'doorbly_staff_profiles',
   DISTRICTS: 'doorbly_districts_master',
   DEPARTMENTS: 'doorbly_departments',
@@ -57,6 +76,7 @@ const STORAGE_KEYS = {
   SUBMISSIONS: 'doorbly_task_submissions',
   CREDITS: 'doorbly_work_credits',
   ATTENDANCE: 'doorbly_attendance',
+  LEAVES: 'doorbly_employee_leaves',
   LEADS: 'doorbly_leads',
   CORP_PROSPECTS: 'doorbly_corp_prospects',
   PARTNERS: 'doorbly_partner_apps',
@@ -66,7 +86,14 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: 'doorbly_audit_logs',
   TASK_VALUE_MASTER: 'doorbly_task_values',
   DAILY_REPORTS: 'doorbly_daily_reports',
-  CURRENT_USER_ID: 'doorbly_current_user_id'
+  CANDIDATES: 'doorbly_hr_candidates',
+  FINANCIAL_TXNS: 'doorbly_financial_txns',
+  CURRENT_USER_ID: 'doorbly_current_user_id',
+  WALLETS: 'doorbly_staff_wallets',
+  WALLET_TXNS: 'doorbly_staff_wallet_txns',
+  WORK_ASSIGNMENTS: 'doorbly_staff_work_assignments',
+  WITHDRAWALS: 'doorbly_staff_withdrawals',
+  NOTIFICATIONS: 'doorbly_staff_notifications'
 };
 
 function getStoredItem<T>(key: string, fallback: T): T {
@@ -88,8 +115,22 @@ function setStoredItem<T>(key: string, value: T): void {
   }
 }
 
-// Initialize seed data if not present
+// Initialize seed data if not present (clears legacy mock/demo data and seeds wallet baseline)
 export function initializeStorageIfNeeded(): void {
+  const CURRENT_STORAGE_VERSION = 'doorbly_realtime_v2_wallets';
+  const existingVersion = localStorage.getItem(STORAGE_KEYS.VERSION);
+
+  // If upgrading version, refresh baseline storage
+  if (existingVersion !== CURRENT_STORAGE_VERSION) {
+    localStorage.removeItem(STORAGE_KEYS.STAFF);
+    localStorage.removeItem(STORAGE_KEYS.WALLETS);
+    localStorage.removeItem(STORAGE_KEYS.WALLET_TXNS);
+    localStorage.removeItem(STORAGE_KEYS.WORK_ASSIGNMENTS);
+    localStorage.removeItem(STORAGE_KEYS.WITHDRAWALS);
+    localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+    localStorage.setItem(STORAGE_KEYS.VERSION, CURRENT_STORAGE_VERSION);
+  }
+
   if (!localStorage.getItem(STORAGE_KEYS.STAFF)) {
     setStoredItem(STORAGE_KEYS.STAFF, INITIAL_STAFF_MEMBERS);
   }
@@ -140,6 +181,21 @@ export function initializeStorageIfNeeded(): void {
   }
   if (!localStorage.getItem(STORAGE_KEYS.DAILY_REPORTS)) {
     setStoredItem(STORAGE_KEYS.DAILY_REPORTS, []);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WALLETS)) {
+    setStoredItem(STORAGE_KEYS.WALLETS, INITIAL_WALLETS);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WALLET_TXNS)) {
+    setStoredItem(STORAGE_KEYS.WALLET_TXNS, INITIAL_WALLET_TXNS);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WORK_ASSIGNMENTS)) {
+    setStoredItem(STORAGE_KEYS.WORK_ASSIGNMENTS, INITIAL_WORK_ASSIGNMENTS);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.WITHDRAWALS)) {
+    setStoredItem(STORAGE_KEYS.WITHDRAWALS, INITIAL_WITHDRAWALS);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) {
+    setStoredItem(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
   }
 }
 
@@ -862,5 +918,1089 @@ export const StorageEngine = {
     setStoredItem(STORAGE_KEYS.DAILY_REPORTS, reports);
     this.logAudit(staff.id, staff.fullName, staff.systemRole, 'GENERATE_DAILY_REPORT', 'Reports', `Generated daily department report for ${todayStr}`);
     return newReport;
+  },
+
+  // --- HR RECRUITMENT PIPELINE ---
+  getCandidates(): JobCandidate[] {
+    return getStoredItem<JobCandidate[]>(STORAGE_KEYS.CANDIDATES, []);
+  },
+
+  createCandidate(data: Omit<JobCandidate, 'id' | 'appliedDate' | 'updatedAt'>, actor?: StaffProfile): JobCandidate {
+    const list = this.getCandidates();
+    const newCandidate: JobCandidate = {
+      ...data,
+      id: `cand-${Date.now()}`,
+      appliedDate: new Date().toISOString().slice(0, 10),
+      updatedAt: new Date().toISOString()
+    };
+    list.unshift(newCandidate);
+    setStoredItem(STORAGE_KEYS.CANDIDATES, list);
+    if (actor) {
+      this.logAudit(actor.id, actor.fullName, actor.systemRole, 'CREATE_CANDIDATE', 'Human Resources', `Added candidate ${newCandidate.fullName} for ${newCandidate.appliedDesignationTitle} (${newCandidate.districtName})`);
+    }
+    return newCandidate;
+  },
+
+  updateCandidate(id: string, updates: Partial<JobCandidate>, actor?: StaffProfile): JobCandidate | null {
+    const list = this.getCandidates();
+    const index = list.findIndex(c => c.id === id);
+    if (index === -1) return null;
+
+    list[index] = {
+      ...list[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    setStoredItem(STORAGE_KEYS.CANDIDATES, list);
+    if (actor) {
+      this.logAudit(actor.id, actor.fullName, actor.systemRole, 'UPDATE_CANDIDATE', 'Human Resources', `Updated candidate ${list[index].fullName} (Stage: ${list[index].stage})`);
+    }
+    return list[index];
+  },
+
+  deleteCandidate(id: string, actor?: StaffProfile): boolean {
+    const list = this.getCandidates();
+    const candidate = list.find(c => c.id === id);
+    if (!candidate) return false;
+
+    const filtered = list.filter(c => c.id !== id);
+    setStoredItem(STORAGE_KEYS.CANDIDATES, filtered);
+    if (actor) {
+      this.logAudit(actor.id, actor.fullName, actor.systemRole, 'DELETE_CANDIDATE', 'Human Resources', `Removed candidate ${candidate.fullName}`);
+    }
+    return true;
+  },
+
+  onboardCandidateToStaff(candidateId: string, actor: StaffProfile): { success: boolean; staff?: StaffProfile; error?: string } {
+    const candidate = this.getCandidates().find(c => c.id === candidateId);
+    if (!candidate) {
+      return { success: false, error: 'Candidate not found in recruitment pipeline.' };
+    }
+
+    const allStaff = this.getStaffProfiles();
+    const designations = this.getDesignations();
+    const desig = designations.find(d => d.id === candidate.appliedDesignationId);
+    const count = allStaff.length + 1;
+    const employeeId = `DBL-OD-${String(count).padStart(3, '0')}`;
+
+    const newStaff: StaffProfile = {
+      id: `staff-${Date.now()}`,
+      employeeId,
+      fullName: candidate.fullName,
+      email: candidate.email,
+      mobile: candidate.mobile,
+      departmentId: desig?.departmentId || 'dept_gen_ops',
+      departmentName: desig?.title || 'General Operations',
+      designationId: candidate.appliedDesignationId,
+      designationTitle: candidate.appliedDesignationTitle,
+      systemRole: desig?.systemRole || 'employee',
+      districtId: candidate.districtId,
+      districtName: candidate.districtName,
+      joiningDate: new Date().toISOString().slice(0, 10),
+      status: 'active',
+      permissionLevel: desig?.systemRole === 'district_manager' ? 'manager' : desig?.systemRole === 'district_coordinator' ? 'coordinator' : 'staff',
+      reportingManagerId: actor.id,
+      reportingManagerName: actor.fullName
+    };
+
+    allStaff.push(newStaff);
+    setStoredItem(STORAGE_KEYS.STAFF, allStaff);
+
+    // Update candidate stage to Onboarded
+    this.updateCandidate(candidateId, { stage: 'Onboarded' }, actor);
+
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'ONBOARD_CANDIDATE', 'Human Resources', `Successfully converted candidate ${candidate.fullName} to active staff profile ${employeeId}`);
+
+    return { success: true, staff: newStaff };
+  },
+
+  deleteStaffProfile(staffId: string, actor: StaffProfile): boolean {
+    const list = this.getStaffProfiles();
+    const index = list.findIndex(s => s.id === staffId);
+    if (index === -1) return false;
+    const removed = list.splice(index, 1)[0];
+    setStoredItem(STORAGE_KEYS.STAFF, list);
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'DELETE_EMPLOYEE', 'Staff Management', `Deleted employee ${removed.employeeId} (${removed.fullName})`);
+    return true;
+  },
+
+  // --- LEAVE MANAGEMENT ---
+  getLeaves(staffId?: string): LeaveRequest[] {
+    const list = getStoredItem<LeaveRequest[]>(STORAGE_KEYS.LEAVES, []);
+    if (!staffId) return list;
+    return list.filter(l => l.staffId === staffId || l.employeeId === staffId);
+  },
+
+  applyLeave(data: Omit<LeaveRequest, 'id' | 'status' | 'appliedAt'>, actor: StaffProfile): LeaveRequest {
+    const list = this.getLeaves();
+    const newLeave: LeaveRequest = {
+      ...data,
+      id: `lev-${Date.now()}`,
+      status: 'pending',
+      appliedAt: new Date().toISOString()
+    };
+    list.unshift(newLeave);
+    setStoredItem(STORAGE_KEYS.LEAVES, list);
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'APPLY_LEAVE', 'Leave Management', `Applied for ${newLeave.leaveType} leave from ${newLeave.startDate} to ${newLeave.endDate}`);
+    return newLeave;
+  },
+
+  updateLeaveStatus(leaveId: string, status: LeaveStatus, actor: StaffProfile, notes?: string): void {
+    const list = this.getLeaves();
+    const leave = list.find(l => l.id === leaveId);
+    if (leave) {
+      leave.status = status;
+      leave.approvedByStaffId = actor.id;
+      leave.approvedByName = actor.fullName;
+      if (notes) leave.approvalNotes = notes;
+      setStoredItem(STORAGE_KEYS.LEAVES, list);
+      this.logAudit(actor.id, actor.fullName, actor.systemRole, 'UPDATE_LEAVE', 'Leave Management', `Leave request for ${leave.employeeName} updated to ${status.toUpperCase()}`);
+    }
+  },
+
+  // --- FINANCIAL & ACCOUNTS CONTROL ---
+  getFinancialTransactions(): FinancialTransaction[] {
+    const list = getStoredItem<FinancialTransaction[]>(STORAGE_KEYS.FINANCIAL_TXNS, []);
+    return list;
+  },
+
+  createFinancialTransaction(data: Omit<FinancialTransaction, 'id' | 'referenceId' | 'createdAt'>, actor: StaffProfile): FinancialTransaction {
+    const list = this.getFinancialTransactions();
+    const count = list.length + 1;
+    const newTxn: FinancialTransaction = {
+      ...data,
+      id: `txn-${Date.now()}`,
+      referenceId: `TXN-OD-${String(9000 + count)}`,
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(newTxn);
+    setStoredItem(STORAGE_KEYS.FINANCIAL_TXNS, list);
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'FINANCIAL_RECORD', 'Finance', `Recorded ${newTxn.direction.toUpperCase()} transaction ${newTxn.referenceId} of ₹${newTxn.amount} (${newTxn.type})`);
+    return newTxn;
+  },
+
+  // --- DEPARTMENT EDITING ---
+  updateDepartment(id: string, updates: Partial<Department>, actor: StaffProfile): Department {
+    const depts = this.getDepartments();
+    const index = depts.findIndex(d => d.id === id);
+    if (index === -1) throw new Error('Department not found');
+    const updated = { ...depts[index], ...updates };
+    depts[index] = updated;
+    setStoredItem(STORAGE_KEYS.DEPARTMENTS, depts);
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'UPDATE_DEPARTMENT', 'Departments', `Updated department ${updated.name}`);
+    return updated;
+  },
+
+  // --- DISTRICT EDITING ---
+  updateDistrict(id: string, updates: Partial<DistrictMaster>, actor: StaffProfile): DistrictMaster {
+    const dists = this.getDistricts();
+    const index = dists.findIndex(d => d.id === id);
+    if (index === -1) throw new Error('District not found');
+    const updated = { ...dists[index], ...updates };
+    dists[index] = updated;
+    setStoredItem(STORAGE_KEYS.DISTRICTS, dists);
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'UPDATE_DISTRICT', 'Districts', `Updated district metadata for ${updated.name}`);
+    return updated;
+  },
+
+  // --- TASK REASSIGNMENT & DELETION ---
+  reassignTask(taskId: string, targetStaffId: string, actor: StaffProfile): void {
+    const tasks = this.getDailyTasks();
+    const staffList = this.getStaffProfiles();
+    const task = tasks.find(t => t.id === taskId || t.taskId === taskId);
+    const targetStaff = staffList.find(s => s.id === targetStaffId);
+    if (task && targetStaff) {
+      const prevName = task.employeeName;
+      task.staffId = targetStaff.id;
+      task.employeeId = targetStaff.employeeId;
+      task.employeeName = targetStaff.fullName;
+      task.districtId = targetStaff.districtId;
+      task.departmentId = targetStaff.departmentId;
+      task.designationId = targetStaff.designationId;
+      task.status = 'reassigned';
+      setStoredItem(STORAGE_KEYS.TASKS, tasks);
+      this.logAudit(actor.id, actor.fullName, actor.systemRole, 'REASSIGN_TASK', 'Tasks', `Reassigned task ${task.taskId} from ${prevName} to ${targetStaff.fullName}`);
+    }
+  },
+
+  deleteDailyTask(taskId: string, actor: StaffProfile): boolean {
+    const tasks = this.getDailyTasks();
+    const index = tasks.findIndex(t => t.id === taskId || t.taskId === taskId);
+    if (index === -1) return false;
+    const removed = tasks.splice(index, 1)[0];
+    setStoredItem(STORAGE_KEYS.TASKS, tasks);
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'DELETE_TASK', 'Tasks', `Deleted task ${removed.taskId} (${removed.taskTitle})`);
+    return true;
+  },
+
+  deletePartner(partnerId: string, actor: StaffProfile): boolean {
+    const partners = this.getPartners();
+    const index = partners.findIndex(p => p.id === partnerId || p.partnerCode === partnerId);
+    if (index === -1) return false;
+    const removed = partners.splice(index, 1)[0];
+    setStoredItem(STORAGE_KEYS.PARTNERS, partners);
+    this.logAudit(actor.id, actor.fullName, actor.systemRole, 'DELETE_PARTNER', 'Partners', `Removed partner ${removed.partnerCode} (${removed.partnerName})`);
+    return true;
+  },
+
+  // ==========================================
+  // --- STAFF INDIVIDUAL WALLET ENGINE ---
+  // ==========================================
+  getWallets(): StaffWallet[] {
+    const list = getStoredItem<StaffWallet[]>(STORAGE_KEYS.WALLETS, INITIAL_WALLETS);
+    const allStaff = this.getStaffProfiles();
+    let updated = false;
+
+    // Ensure every staff member has an individual wallet automatically
+    allStaff.forEach(staff => {
+      const exists = list.some(w => w.staffId === staff.id || w.employeeId === staff.employeeId);
+      if (!exists) {
+        const newWallet: StaffWallet = {
+          id: `wlt-${staff.id}`,
+          staffId: staff.id,
+          employeeId: staff.employeeId,
+          fullName: staff.fullName,
+          departmentId: staff.departmentId,
+          departmentName: staff.departmentName || 'General Operations',
+          designationTitle: staff.designationTitle || 'Staff Executive',
+          districtName: staff.districtName,
+          totalEarnings: 0,
+          availableBalance: 0,
+          pendingEarnings: 0,
+          approvedEarnings: 0,
+          totalWithdrawnAmount: 0,
+          totalAdminAdjustments: 0,
+          totalCompletedWork: 0,
+          currentMonthEarnings: 0,
+          bankAccountDetails: {
+            accountHolderName: staff.fullName,
+            accountNumber: '•••• •••• ' + (staff.mobile?.replace(/[^0-9]/g, '').slice(-4) || '9921'),
+            ifscCode: 'SBIN0001024',
+            bankName: 'State Bank of India',
+            upiId: `${staff.fullName.toLowerCase().replace(/[^a-z0-9]/g, '')}@upi`,
+            isKycVerified: true
+          },
+          updatedAt: new Date().toISOString()
+        };
+        list.push(newWallet);
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      setStoredItem(STORAGE_KEYS.WALLETS, list);
+    }
+    return list;
+  },
+
+  getStaffWallet(staffId: string): StaffWallet {
+    const list = this.getWallets();
+    let wallet = list.find(w => w.staffId === staffId || w.employeeId === staffId);
+    if (!wallet) {
+      const staff = this.getStaffById(staffId);
+      wallet = {
+        id: `wlt-${staffId}`,
+        staffId: staff?.id || staffId,
+        employeeId: staff?.employeeId || staffId,
+        fullName: staff?.fullName || 'Doorbly Employee',
+        departmentId: staff?.departmentId || 'dept_gen_ops',
+        departmentName: staff?.departmentName || 'General Operations',
+        designationTitle: staff?.designationTitle || 'Staff Executive',
+        districtName: staff?.districtName || 'Khordha (Bhubaneswar HQ)',
+        totalEarnings: 0,
+        availableBalance: 0,
+        pendingEarnings: 0,
+        approvedEarnings: 0,
+        totalWithdrawnAmount: 0,
+        totalAdminAdjustments: 0,
+        totalCompletedWork: 0,
+        currentMonthEarnings: 0,
+        bankAccountDetails: {
+          accountHolderName: staff?.fullName || 'Doorbly Employee',
+          accountNumber: '•••• •••• 9921',
+          ifscCode: 'SBIN0001024',
+          bankName: 'State Bank of India',
+          upiId: 'doorbly.staff@upi',
+          isKycVerified: true
+        },
+        updatedAt: new Date().toISOString()
+      };
+      list.push(wallet);
+      setStoredItem(STORAGE_KEYS.WALLETS, list);
+    }
+    return wallet;
+  },
+
+  updateWalletBankDetails(staffId: string, details: StaffBankAccountDetails, actor?: StaffProfile): StaffWallet {
+    const list = this.getWallets();
+    const index = list.findIndex(w => w.staffId === staffId || w.employeeId === staffId);
+    if (index === -1) throw new Error('Staff wallet not found');
+
+    list[index].bankAccountDetails = {
+      ...details,
+      isKycVerified: true
+    };
+    list[index].updatedAt = new Date().toISOString();
+    setStoredItem(STORAGE_KEYS.WALLETS, list);
+
+    if (actor) {
+      this.logAudit(
+        actor.id,
+        actor.fullName,
+        actor.systemRole,
+        'UPDATE_WALLET_KYC',
+        'Staff Wallet',
+        `Updated bank details & payout account for employee ${list[index].employeeId} (${list[index].fullName})`
+      );
+    }
+    return list[index];
+  },
+
+  // --- WALLET TRANSACTIONS LEDGER ---
+  getWalletTransactions(staffId?: string): StaffWalletTransaction[] {
+    const list = getStoredItem<StaffWalletTransaction[]>(STORAGE_KEYS.WALLET_TXNS, INITIAL_WALLET_TXNS);
+    if (!staffId) return list;
+    return list.filter(t => t.staffId === staffId || t.employeeId === staffId);
+  },
+
+  recordWalletTransaction(data: Omit<StaffWalletTransaction, 'id' | 'transactionId' | 'createdAt'>): StaffWalletTransaction {
+    const list = getStoredItem<StaffWalletTransaction[]>(STORAGE_KEYS.WALLET_TXNS, INITIAL_WALLET_TXNS);
+    const count = list.length + 1;
+    const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
+    const newTxn: StaffWalletTransaction = {
+      ...data,
+      id: `wtx-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      transactionId: `WLT-TXN-${dateStr}-${String(count).padStart(3, '0')}`,
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(newTxn);
+    setStoredItem(STORAGE_KEYS.WALLET_TXNS, list);
+    return newTxn;
+  },
+
+  // ==========================================
+  // --- STAFF WORK & EARNINGS MANAGEMENT ---
+  // ==========================================
+  getStaffWorkAssignments(filter?: { staffId?: string; departmentId?: string; districtId?: string; status?: StaffWorkStatus }): StaffWorkAssignment[] {
+    const list = getStoredItem<StaffWorkAssignment[]>(STORAGE_KEYS.WORK_ASSIGNMENTS, INITIAL_WORK_ASSIGNMENTS);
+    if (!filter) return list;
+
+    return list.filter(w => {
+      if (filter.staffId && !w.assignedStaffIds.includes(filter.staffId)) return false;
+      if (filter.departmentId && w.departmentId !== filter.departmentId) return false;
+      if (filter.districtId && w.districtId !== filter.districtId) return false;
+      if (filter.status && w.status !== filter.status) return false;
+      return true;
+    });
+  },
+
+  getStaffWorkById(workId: string): StaffWorkAssignment | undefined {
+    const list = this.getStaffWorkAssignments();
+    return list.find(w => w.id === workId || w.workCode === workId);
+  },
+
+  createWorkAssignment(
+    data: Omit<StaffWorkAssignment, 'id' | 'workCode' | 'createdAt' | 'updatedAt' | 'isCredited'>,
+    actor: StaffProfile
+  ): StaffWorkAssignment {
+    const list = this.getStaffWorkAssignments();
+    const count = list.length + 1;
+    const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
+    const workCode = `WRK-OD-${dateStr}-${String(count).padStart(3, '0')}`;
+
+    const newWork: StaffWorkAssignment = {
+      ...data,
+      id: `wrk-${Date.now()}`,
+      workCode,
+      isCredited: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    list.unshift(newWork);
+    setStoredItem(STORAGE_KEYS.WORK_ASSIGNMENTS, list);
+
+    // Update pending earnings on assigned staff wallets
+    const wallets = this.getWallets();
+    data.assignedStaffIds.forEach(staffId => {
+      const w = wallets.find(wallet => wallet.staffId === staffId || wallet.employeeId === staffId);
+      if (w) {
+        w.pendingEarnings += data.staffEarningAmount;
+        w.updatedAt = new Date().toISOString();
+      }
+
+      // Send in-app notification
+      this.createNotification({
+        staffId,
+        title: `New Work Assigned: ${newWork.workCode}`,
+        message: `You have been assigned "${newWork.title}" with earning credit value ₹${newWork.staffEarningAmount}. Deadline: ${newWork.completionDeadline}`,
+        type: 'task',
+        linkTarget: 'wallet'
+      });
+    });
+    setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+
+    this.logAudit(
+      actor.id,
+      actor.fullName,
+      actor.systemRole,
+      'CREATE_WORK_ASSIGNMENT',
+      'Staff Work & Earnings',
+      `Created work ${newWork.workCode}: "${newWork.title}" (Customer Value: ₹${newWork.customerWorkValue}, Staff Earning: ₹${newWork.staffEarningAmount}) assigned to ${newWork.assignedStaffNames.join(', ')}`
+    );
+
+    return newWork;
+  },
+
+  updateWorkAssignment(workId: string, updates: Partial<StaffWorkAssignment>, actor: StaffProfile): StaffWorkAssignment {
+    const list = this.getStaffWorkAssignments();
+    const index = list.findIndex(w => w.id === workId || w.workCode === workId);
+    if (index === -1) throw new Error('Work assignment not found');
+
+    const prevWork = { ...list[index] };
+    const updatedWork: StaffWorkAssignment = {
+      ...list[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+
+    // CRITICAL: Earning Amount Modification & Audited Adjustment / Reversal Handling
+    if (updates.staffEarningAmount !== undefined && updates.staffEarningAmount !== prevWork.staffEarningAmount) {
+      const oldAmount = prevWork.staffEarningAmount;
+      const newAmount = updates.staffEarningAmount;
+      const diff = newAmount - oldAmount;
+
+      if (prevWork.isCredited) {
+        // CASE A: Work was already credited to staff wallet!
+        // We MUST NOT silently overwrite the past transaction.
+        // Instead, post an audited adjustment or reversal transaction.
+        const wallets = this.getWallets();
+        prevWork.assignedStaffIds.forEach(staffId => {
+          const w = wallets.find(wallet => wallet.staffId === staffId || wallet.employeeId === staffId);
+          if (w) {
+            if (diff > 0) {
+              // Increase earning
+              w.availableBalance += diff;
+              w.totalEarnings += diff;
+              w.approvedEarnings += diff;
+              w.totalAdminAdjustments += diff;
+
+              this.recordWalletTransaction({
+                staffId: w.staffId,
+                employeeId: w.employeeId,
+                date: new Date().toISOString().replace('T', ' ').slice(0, 19),
+                workId: updatedWork.workCode,
+                workDescription: `Admin Earning Increase on ${updatedWork.workCode} (₹${oldAmount} ➔ ₹${newAmount})`,
+                category: 'Admin Adjustment',
+                type: 'adjustment_credit',
+                credit: diff,
+                debit: 0,
+                runningBalance: w.availableBalance,
+                status: 'completed',
+                adminRemarks: updates.adminRemarks || `Authorized increase by ${actor.fullName}`,
+                authorizedBy: actor.fullName
+              });
+            } else {
+              // Decrease earning (reversal adjustment)
+              const debitAmount = Math.abs(diff);
+              w.availableBalance = Math.max(0, w.availableBalance - debitAmount);
+              w.totalEarnings = Math.max(0, w.totalEarnings - debitAmount);
+              w.approvedEarnings = Math.max(0, w.approvedEarnings - debitAmount);
+              w.totalAdminAdjustments -= debitAmount;
+
+              this.recordWalletTransaction({
+                staffId: w.staffId,
+                employeeId: w.employeeId,
+                date: new Date().toISOString().replace('T', ' ').slice(0, 19),
+                workId: updatedWork.workCode,
+                workDescription: `Admin Earning Reduction on ${updatedWork.workCode} (₹${oldAmount} ➔ ₹${newAmount})`,
+                category: 'Admin Adjustment',
+                type: 'adjustment_debit',
+                credit: 0,
+                debit: debitAmount,
+                runningBalance: w.availableBalance,
+                status: 'completed',
+                adminRemarks: updates.adminRemarks || `Authorized reduction by ${actor.fullName}`,
+                authorizedBy: actor.fullName
+              });
+            }
+            w.updatedAt = new Date().toISOString();
+
+            this.createNotification({
+              staffId,
+              title: `Wallet Adjustment on ${updatedWork.workCode}`,
+              message: `Earning amount was adjusted from ₹${oldAmount} to ₹${newAmount} (${diff > 0 ? `+₹${diff}` : `-₹${Math.abs(diff)}`}) by Admin ${actor.fullName}.`,
+              type: 'alert',
+              linkTarget: 'wallet'
+            });
+          }
+        });
+        setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+
+        this.logAudit(
+          actor.id,
+          actor.fullName,
+          actor.systemRole,
+          'ADJUST_CREDITED_WORK_AMOUNT',
+          'Staff Work & Earnings',
+          `Audited financial adjustment on credited work ${updatedWork.workCode}: earning changed from ₹${oldAmount} to ₹${newAmount} (${diff > 0 ? `+₹${diff}` : `-₹${Math.abs(diff)}`})`
+        );
+      } else {
+        // CASE B: Work not yet credited. Adjust pending earnings on wallets.
+        const wallets = this.getWallets();
+        prevWork.assignedStaffIds.forEach(staffId => {
+          const w = wallets.find(wallet => wallet.staffId === staffId || wallet.employeeId === staffId);
+          if (w) {
+            w.pendingEarnings = Math.max(0, w.pendingEarnings + diff);
+            w.updatedAt = new Date().toISOString();
+          }
+        });
+        setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+      }
+    }
+
+    list[index] = updatedWork;
+    setStoredItem(STORAGE_KEYS.WORK_ASSIGNMENTS, list);
+
+    this.logAudit(
+      actor.id,
+      actor.fullName,
+      actor.systemRole,
+      'UPDATE_WORK_ASSIGNMENT',
+      'Staff Work & Earnings',
+      `Updated work ${updatedWork.workCode} (${updatedWork.title})`
+    );
+
+    return updatedWork;
+  },
+
+  submitWorkCompletion(
+    workId: string,
+    staff: StaffProfile,
+    submissionNotes: string,
+    evidenceFileName?: string,
+    evidenceUrl?: string
+  ): StaffWorkAssignment {
+    const list = this.getStaffWorkAssignments();
+    const work = list.find(w => w.id === workId || w.workCode === workId);
+    if (!work) throw new Error('Work assignment not found');
+
+    work.status = 'completed';
+    work.submissionNotes = submissionNotes;
+    if (evidenceFileName) work.evidenceFileName = evidenceFileName;
+    if (evidenceUrl) work.evidenceUrl = evidenceUrl;
+    work.completedAt = new Date().toISOString();
+    work.updatedAt = new Date().toISOString();
+
+    setStoredItem(STORAGE_KEYS.WORK_ASSIGNMENTS, list);
+
+    this.logAudit(
+      staff.id,
+      staff.fullName,
+      staff.systemRole,
+      'SUBMIT_WORK_COMPLETION',
+      'Staff Work & Earnings',
+      `Submitted work completion for ${work.workCode}: "${work.title}". Earning pending approval: ₹${work.staffEarningAmount}`
+    );
+
+    return work;
+  },
+
+  // 5. WORK COMPLETION & WALLET CREDITING (With strict Idempotency Protection)
+  approveWorkAndCreditWallet(
+    workId: string,
+    approver: StaffProfile,
+    extraIncentive: number = 0,
+    adminRemarks?: string
+  ): { success: boolean; creditedAmount?: number; error?: string } {
+    const list = this.getStaffWorkAssignments();
+    const work = list.find(w => w.id === workId || w.workCode === workId);
+    if (!work) return { success: false, error: 'Work record not found.' };
+
+    // IDEMPOTENCY GUARD: Prevent duplicate credits if administrator clicks multiple times
+    if (work.isCredited) {
+      return {
+        success: false,
+        error: `Duplicate credit prevented! This work assignment was already credited on ${work.approvedAt} (Transaction: ${work.creditedTransactionId || 'RECORDED'}).`
+      };
+    }
+
+    const baseAmount = work.staffEarningAmount;
+    const totalCreditPerStaff = baseAmount + extraIncentive;
+    const approvalTimestamp = new Date().toISOString();
+
+    work.status = 'approved';
+    work.isCredited = true;
+    work.approvedAt = approvalTimestamp;
+    work.approvedByStaffId = approver.id;
+    work.approvedByName = approver.fullName;
+    work.incentiveAmount = extraIncentive;
+    if (adminRemarks) work.adminRemarks = adminRemarks;
+    work.updatedAt = approvalTimestamp;
+
+    // Credit each assigned staff member's individual wallet
+    const wallets = this.getWallets();
+    let lastTxnId = '';
+
+    work.assignedStaffIds.forEach(staffId => {
+      const wallet = wallets.find(w => w.staffId === staffId || w.employeeId === staffId);
+      if (wallet) {
+        wallet.availableBalance += totalCreditPerStaff;
+        wallet.totalEarnings += totalCreditPerStaff;
+        wallet.approvedEarnings += totalCreditPerStaff;
+        wallet.totalCompletedWork += 1;
+        wallet.currentMonthEarnings += totalCreditPerStaff;
+        wallet.pendingEarnings = Math.max(0, wallet.pendingEarnings - baseAmount);
+        wallet.updatedAt = approvalTimestamp;
+
+        // Create transaction record
+        const txn = this.recordWalletTransaction({
+          staffId: wallet.staffId,
+          employeeId: wallet.employeeId,
+          date: approvalTimestamp.replace('T', ' ').slice(0, 19),
+          workId: work.workCode,
+          workDescription: `${work.title} (Approved Work Earning${extraIncentive > 0 ? ` + ₹${extraIncentive} Incentive` : ''})`,
+          category: 'Work Completion',
+          type: 'work_credit',
+          credit: totalCreditPerStaff,
+          debit: 0,
+          runningBalance: wallet.availableBalance,
+          status: 'completed',
+          adminRemarks: adminRemarks || `Approved by ${approver.fullName}. Base: ₹${baseAmount}${extraIncentive > 0 ? `, Incentive: ₹${extraIncentive}` : ''}`,
+          authorizedBy: approver.fullName
+        });
+
+        lastTxnId = txn.transactionId;
+
+        // In-app notification for the employee
+        this.createNotification({
+          staffId,
+          title: `Wallet Credited: ₹${totalCreditPerStaff}`,
+          message: `Your work "${work.title}" has been approved. ₹${totalCreditPerStaff} has been credited to your available wallet balance.`,
+          type: 'approval',
+          linkTarget: 'wallet'
+        });
+      }
+    });
+
+    work.creditedTransactionId = lastTxnId;
+
+    setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+    setStoredItem(STORAGE_KEYS.WORK_ASSIGNMENTS, list);
+
+    this.logAudit(
+      approver.id,
+      approver.fullName,
+      approver.systemRole,
+      'APPROVE_WORK_WALLET_CREDIT',
+      'Staff Work & Earnings',
+      `Approved work ${work.workCode} and credited ₹${totalCreditPerStaff} to ${work.assignedStaffNames.join(', ')} (Txn: ${lastTxnId})`
+    );
+
+    return { success: true, creditedAmount: totalCreditPerStaff };
+  },
+
+  rejectWorkAssignment(workId: string, approver: StaffProfile, mandatoryReason: string): void {
+    if (!mandatoryReason || mandatoryReason.trim().length < 5) {
+      throw new Error('Mandatory rejection reason required (minimum 5 characters).');
+    }
+
+    const list = this.getStaffWorkAssignments();
+    const work = list.find(w => w.id === workId || w.workCode === workId);
+    if (!work) throw new Error('Work not found');
+
+    work.status = 'rejected';
+    work.rejectionReason = mandatoryReason;
+    work.approvedByStaffId = approver.id;
+    work.approvedByName = approver.fullName;
+    work.updatedAt = new Date().toISOString();
+
+    // Release pending earnings on staff wallet
+    const wallets = this.getWallets();
+    work.assignedStaffIds.forEach(staffId => {
+      const w = wallets.find(wallet => wallet.staffId === staffId || wallet.employeeId === staffId);
+      if (w) {
+        w.pendingEarnings = Math.max(0, w.pendingEarnings - work.staffEarningAmount);
+        w.updatedAt = new Date().toISOString();
+      }
+
+      this.createNotification({
+        staffId,
+        title: `Work Discrepancy on ${work.workCode}`,
+        message: `Work "${work.title}" was rejected: ${mandatoryReason}. Please review notes and re-submit.`,
+        type: 'rejection',
+        linkTarget: 'wallet'
+      });
+    });
+
+    setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+    setStoredItem(STORAGE_KEYS.WORK_ASSIGNMENTS, list);
+
+    this.logAudit(
+      approver.id,
+      approver.fullName,
+      approver.systemRole,
+      'REJECT_WORK_ASSIGNMENT',
+      'Staff Work & Earnings',
+      `Rejected work ${work.workCode} for ${work.assignedStaffNames.join(', ')}. Reason: ${mandatoryReason}`
+    );
+  },
+
+  // ==========================================
+  // --- WALLET WITHDRAWAL MANAGEMENT ---
+  // ==========================================
+  getWithdrawalRequests(staffId?: string): StaffWithdrawalRequest[] {
+    const list = getStoredItem<StaffWithdrawalRequest[]>(STORAGE_KEYS.WITHDRAWALS, INITIAL_WITHDRAWALS);
+    if (!staffId) return list;
+    return list.filter(w => w.staffId === staffId || w.employeeId === staffId);
+  },
+
+  requestWithdrawal(
+    staff: StaffProfile,
+    amount: number,
+    payoutAccount: StaffBankAccountDetails,
+    remarks?: string
+  ): { success: boolean; request?: StaffWithdrawalRequest; error?: string } {
+    if (amount < 100) {
+      return { success: false, error: 'Minimum withdrawal amount is ₹100.' };
+    }
+
+    const wallet = this.getStaffWallet(staff.id);
+    if (wallet.availableBalance < amount) {
+      return {
+        success: false,
+        error: `Insufficient available wallet balance. Requested ₹${amount}, but your available balance is ₹${wallet.availableBalance}.`
+      };
+    }
+
+    // Reserve funds immediately to prevent double spending
+    wallet.availableBalance -= amount;
+    wallet.updatedAt = new Date().toISOString();
+
+    const allWallets = this.getWallets();
+    const wIndex = allWallets.findIndex(w => w.staffId === staff.id || w.employeeId === staff.employeeId);
+    if (wIndex !== -1) {
+      allWallets[wIndex] = wallet;
+      setStoredItem(STORAGE_KEYS.WALLETS, allWallets);
+    }
+
+    const requests = this.getWithdrawalRequests();
+    const count = requests.length + 1;
+    const dateStr = new Date().toISOString().slice(0, 7).replace('-', '');
+    const withdrawalCode = `WDR-OD-${dateStr}-${String(count).padStart(3, '0')}`;
+
+    const newRequest: StaffWithdrawalRequest = {
+      id: `wdr-${Date.now()}`,
+      withdrawalCode,
+      staffId: staff.id,
+      employeeId: staff.employeeId,
+      employeeName: staff.fullName,
+      departmentName: staff.departmentName || 'Operations',
+      requestedAmount: amount,
+      payoutAccount,
+      isKycVerified: payoutAccount.isKycVerified ?? true,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+      adminRemarks: remarks
+    };
+
+    requests.unshift(newRequest);
+    setStoredItem(STORAGE_KEYS.WITHDRAWALS, requests);
+
+    // Record pending withdrawal transaction
+    this.recordWalletTransaction({
+      staffId: staff.id,
+      employeeId: staff.employeeId,
+      date: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      workDescription: `Wallet Withdrawal Request (${withdrawalCode}) to ${payoutAccount.bankName || payoutAccount.upiId}`,
+      category: 'Withdrawal Request',
+      type: 'withdrawal',
+      credit: 0,
+      debit: amount,
+      runningBalance: wallet.availableBalance,
+      status: 'pending',
+      adminRemarks: remarks || 'Awaiting administrative verification and payout processing'
+    });
+
+    this.createNotification({
+      staffId: staff.id,
+      title: `Withdrawal Requested: ₹${amount}`,
+      message: `Your withdrawal request (${withdrawalCode}) of ₹${amount} is under review by Central Admin.`,
+      type: 'approval',
+      linkTarget: 'wallet'
+    });
+
+    this.logAudit(
+      staff.id,
+      staff.fullName,
+      staff.systemRole,
+      'REQUEST_WITHDRAWAL',
+      'Staff Wallet',
+      `Submitted withdrawal request ${withdrawalCode} for ₹${amount}`
+    );
+
+    return { success: true, request: newRequest };
+  },
+
+  reviewWithdrawalRequest(
+    withdrawalId: string,
+    decision: 'approve' | 'reject',
+    reviewer: StaffProfile,
+    notes?: string
+  ): { success: boolean; error?: string } {
+    const list = this.getWithdrawalRequests();
+    const req = list.find(r => r.id === withdrawalId || r.withdrawalCode === withdrawalId);
+    if (!req) return { success: false, error: 'Withdrawal request not found.' };
+
+    if (decision === 'approve') {
+      req.status = 'approved';
+      req.reviewedAt = new Date().toISOString();
+      req.reviewedByStaffId = reviewer.id;
+      req.reviewedByName = reviewer.fullName;
+      if (notes) req.adminRemarks = notes;
+
+      this.createNotification({
+        staffId: req.staffId,
+        title: `Withdrawal Approved: ₹${req.requestedAmount}`,
+        message: `Your withdrawal request ${req.withdrawalCode} has been verified and approved. Payout queue processing underway.`,
+        type: 'approval',
+        linkTarget: 'wallet'
+      });
+    } else {
+      req.status = 'rejected';
+      req.rejectionReason = notes || 'Administrative rejection';
+      req.reviewedAt = new Date().toISOString();
+      req.reviewedByStaffId = reviewer.id;
+      req.reviewedByName = reviewer.fullName;
+
+      // REFUND reserved funds back to employee wallet!
+      const wallets = this.getWallets();
+      const wallet = wallets.find(w => w.staffId === req.staffId || w.employeeId === req.employeeId);
+      if (wallet) {
+        wallet.availableBalance += req.requestedAmount;
+        wallet.updatedAt = new Date().toISOString();
+        setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+
+        // Record reversal transaction
+        this.recordWalletTransaction({
+          staffId: wallet.staffId,
+          employeeId: wallet.employeeId,
+          date: new Date().toISOString().replace('T', ' ').slice(0, 19),
+          workDescription: `Reversal: Withdrawal ${req.withdrawalCode} Rejected (Refunded to Available Balance)`,
+          category: 'Reversal',
+          type: 'reversal',
+          credit: req.requestedAmount,
+          debit: 0,
+          runningBalance: wallet.availableBalance,
+          status: 'completed',
+          adminRemarks: notes || 'Withdrawal rejected - funds restored to wallet balance',
+          authorizedBy: reviewer.fullName
+        });
+      }
+
+      this.createNotification({
+        staffId: req.staffId,
+        title: `Withdrawal Rejected: ₹${req.requestedAmount}`,
+        message: `Your withdrawal request ${req.withdrawalCode} was rejected: ${notes || 'Contact Admin'}. Funds were restored to your wallet.`,
+        type: 'rejection',
+        linkTarget: 'wallet'
+      });
+    }
+
+    setStoredItem(STORAGE_KEYS.WITHDRAWALS, list);
+
+    this.logAudit(
+      reviewer.id,
+      reviewer.fullName,
+      reviewer.systemRole,
+      decision === 'approve' ? 'APPROVE_WITHDRAWAL' : 'REJECT_WITHDRAWAL',
+      'Staff Wallet',
+      `${decision === 'approve' ? 'Approved' : 'Rejected'} withdrawal ${req.withdrawalCode} of ₹${req.requestedAmount} for ${req.employeeName}`
+    );
+
+    return { success: true };
+  },
+
+  processWithdrawalPayout(
+    withdrawalId: string,
+    payoutMode: 'IMPS' | 'NEFT' | 'UPI' | 'Direct Bank Transfer',
+    utrReference: string,
+    admin: StaffProfile,
+    remarks?: string
+  ): { success: boolean; error?: string } {
+    if (!utrReference || utrReference.trim().length < 4) {
+      return { success: false, error: 'Valid UTR / Payment Reference ID is mandatory.' };
+    }
+
+    const list = this.getWithdrawalRequests();
+    const req = list.find(r => r.id === withdrawalId || r.withdrawalCode === withdrawalId);
+    if (!req) return { success: false, error: 'Withdrawal request not found.' };
+
+    const timestamp = new Date().toISOString();
+    req.status = 'completed';
+    req.payoutMode = payoutMode;
+    req.utrReference = utrReference;
+    req.processedAt = timestamp;
+    if (remarks) req.adminRemarks = remarks;
+
+    // Update wallet withdrawn amount
+    const wallets = this.getWallets();
+    const wallet = wallets.find(w => w.staffId === req.staffId || w.employeeId === req.employeeId);
+    if (wallet) {
+      wallet.totalWithdrawnAmount += req.requestedAmount;
+      wallet.updatedAt = timestamp;
+      setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+
+      // Update corresponding transaction to completed
+      const txns = this.getWalletTransactions();
+      const txn = txns.find(t => t.workDescription?.includes(req.withdrawalCode) && t.type === 'withdrawal');
+      if (txn) {
+        txn.status = 'completed';
+        txn.adminRemarks = `Payout via ${payoutMode} (UTR: ${utrReference}). Processed by ${admin.fullName}`;
+        txn.authorizedBy = admin.fullName;
+        setStoredItem(STORAGE_KEYS.WALLET_TXNS, txns);
+      }
+    }
+
+    setStoredItem(STORAGE_KEYS.WITHDRAWALS, list);
+
+    this.createNotification({
+      staffId: req.staffId,
+      title: `Payout Completed: ₹${req.requestedAmount}`,
+      message: `Your withdrawal of ₹${req.requestedAmount} has been paid via ${payoutMode}. Reference / UTR: ${utrReference}`,
+      type: 'approval',
+      linkTarget: 'wallet'
+    });
+
+    this.logAudit(
+      admin.id,
+      admin.fullName,
+      admin.systemRole,
+      'PROCESS_WITHDRAWAL_PAYOUT',
+      'Staff Wallet',
+      `Completed payout of ₹${req.requestedAmount} for ${req.employeeName} (${req.withdrawalCode}) via ${payoutMode} (UTR: ${utrReference})`
+    );
+
+    return { success: true };
+  },
+
+  // 4. MANUAL AUTHORIZED WALLET ADJUSTMENT
+  adminManualWalletAdjustment(
+    staffId: string,
+    type: 'credit' | 'debit',
+    amount: number,
+    mandatoryReason: string,
+    admin: StaffProfile
+  ): { success: boolean; error?: string; newBalance?: number } {
+    if (amount <= 0) return { success: false, error: 'Adjustment amount must be greater than zero.' };
+    if (!mandatoryReason || mandatoryReason.trim().length < 5) {
+      return { success: false, error: 'Mandatory justification reason required (minimum 5 characters).' };
+    }
+
+    const wallets = this.getWallets();
+    const wallet = wallets.find(w => w.staffId === staffId || w.employeeId === staffId);
+    if (!wallet) return { success: false, error: 'Staff wallet not found.' };
+
+    if (type === 'debit' && wallet.availableBalance < amount) {
+      return {
+        success: false,
+        error: `Cannot debit ₹${amount}. Available balance is ₹${wallet.availableBalance}. Negative balance prevented.`
+      };
+    }
+
+    const timestamp = new Date().toISOString();
+
+    if (type === 'credit') {
+      wallet.availableBalance += amount;
+      wallet.totalEarnings += amount;
+      wallet.totalAdminAdjustments += amount;
+    } else {
+      wallet.availableBalance -= amount;
+      wallet.totalAdminAdjustments -= amount;
+    }
+    wallet.updatedAt = timestamp;
+
+    const txn = this.recordWalletTransaction({
+      staffId: wallet.staffId,
+      employeeId: wallet.employeeId,
+      date: timestamp.replace('T', ' ').slice(0, 19),
+      workDescription: `Administrative ${type === 'credit' ? 'Credit' : 'Debit'} Adjustment: ${mandatoryReason}`,
+      category: 'Admin Adjustment',
+      type: type === 'credit' ? 'adjustment_credit' : 'adjustment_debit',
+      credit: type === 'credit' ? amount : 0,
+      debit: type === 'debit' ? amount : 0,
+      runningBalance: wallet.availableBalance,
+      status: 'completed',
+      adminRemarks: mandatoryReason,
+      authorizedBy: admin.fullName
+    });
+
+    setStoredItem(STORAGE_KEYS.WALLETS, wallets);
+
+    this.createNotification({
+      staffId: wallet.staffId,
+      title: `Wallet Adjustment: ${type === 'credit' ? `+₹${amount}` : `-₹${amount}`}`,
+      message: `An administrative ${type} adjustment of ₹${amount} was recorded by ${admin.fullName}. Reason: ${mandatoryReason}`,
+      type: 'alert',
+      linkTarget: 'wallet'
+    });
+
+    this.logAudit(
+      admin.id,
+      admin.fullName,
+      admin.systemRole,
+      'MANUAL_WALLET_ADJUSTMENT',
+      'Staff Wallet',
+      `Manual ${type.toUpperCase()} of ₹${amount} for ${wallet.employeeId} (${wallet.fullName}). Reason: ${mandatoryReason} (Txn: ${txn.transactionId})`
+    );
+
+    return { success: true, newBalance: wallet.availableBalance };
+  },
+
+  // ==========================================
+  // --- IN-APP STAFF NOTIFICATIONS ---
+  // ==========================================
+  getStaffNotifications(staffId?: string): StaffNotification[] {
+    const list = getStoredItem<StaffNotification[]>(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
+    if (!staffId) return list;
+    return list.filter(n => n.staffId === staffId);
+  },
+
+  createNotification(data: Omit<StaffNotification, 'id' | 'createdAt' | 'isRead'>): StaffNotification {
+    const list = getStoredItem<StaffNotification[]>(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
+    const newNotif: StaffNotification = {
+      ...data,
+      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      isRead: false,
+      createdAt: new Date().toISOString()
+    };
+    list.unshift(newNotif);
+    // Keep max 150 notifications
+    if (list.length > 150) list.pop();
+    setStoredItem(STORAGE_KEYS.NOTIFICATIONS, list);
+    return newNotif;
+  },
+
+  markNotificationRead(notifId: string): void {
+    const list = this.getStaffNotifications();
+    const item = list.find(n => n.id === notifId);
+    if (item) {
+      item.isRead = true;
+      setStoredItem(STORAGE_KEYS.NOTIFICATIONS, list);
+    }
+  },
+
+  markAllNotificationsRead(staffId: string): void {
+    const list = this.getStaffNotifications();
+    list.forEach(n => {
+      if (n.staffId === staffId) n.isRead = true;
+    });
+    setStoredItem(STORAGE_KEYS.NOTIFICATIONS, list);
+  },
+
+  purgeAndResetRealtime(): void {
+    localStorage.removeItem(STORAGE_KEYS.VERSION);
+    initializeStorageIfNeeded();
   }
 };
+

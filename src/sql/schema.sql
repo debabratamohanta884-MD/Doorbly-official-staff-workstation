@@ -1,12 +1,22 @@
 -- =========================================================================
 -- DOORBLY REMOTE EMPLOYEE WORKSTATION & MANAGEMENT SYSTEM
--- Master PostgreSQL / Supabase SQL Migration
+-- Master PostgreSQL / Supabase SQL Migration (Production Ready)
 -- All 23 Tables, Constraints, Indexes, RLS Policies, and Initial Seeds
 -- Target Platform: workstation.doorbly.com (30 Districts of Odisha, India)
 -- =========================================================================
 
--- Enable UUID extension if not enabled
+-- Enable pgcrypto / uuid extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Function to handle auto-updating updated_at timestamp
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 -- 1. DEPARTMENTS
 CREATE TABLE IF NOT EXISTS departments (
@@ -31,7 +41,7 @@ CREATE TABLE IF NOT EXISTS job_designations (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. DISTRICTS & 18. DAILY DISTRICT TARGETS
+-- 3. DISTRICTS & DAILY DISTRICT TARGETS
 CREATE TABLE IF NOT EXISTS districts (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -46,9 +56,9 @@ CREATE TABLE IF NOT EXISTS districts (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. STAFF PROFILES (Connected to Firebase UID / Supabase Auth)
+-- 4. STAFF PROFILES (Supports UUID or text-based employee keys)
 CREATE TABLE IF NOT EXISTS staff_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     firebase_uid TEXT UNIQUE,
     employee_id TEXT NOT NULL UNIQUE, -- e.g. DBL-OD-001
     full_name TEXT NOT NULL,
@@ -58,7 +68,7 @@ CREATE TABLE IF NOT EXISTS staff_profiles (
     designation_id TEXT REFERENCES job_designations(id) ON DELETE RESTRICT,
     system_role TEXT NOT NULL CHECK (system_role IN ('super_admin', 'central_dept_head', 'district_manager', 'district_coordinator', 'employee')),
     district_id TEXT REFERENCES districts(id) ON DELETE RESTRICT,
-    reporting_manager_id UUID REFERENCES staff_profiles(id) ON DELETE SET NULL,
+    reporting_manager_id TEXT REFERENCES staff_profiles(id) ON DELETE SET NULL,
     joining_date DATE NOT NULL DEFAULT CURRENT_DATE,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended', 'probation')),
     photo_url TEXT,
@@ -69,23 +79,23 @@ CREATE TABLE IF NOT EXISTS staff_profiles (
 
 -- 5. DISTRICT ASSIGNMENTS (Audit log of transfers)
 CREATE TABLE IF NOT EXISTS district_assignments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
     previous_district_id TEXT REFERENCES districts(id),
     new_district_id TEXT NOT NULL REFERENCES districts(id),
-    transferred_by UUID REFERENCES staff_profiles(id),
+    transferred_by TEXT REFERENCES staff_profiles(id),
     transfer_reason TEXT NOT NULL,
     effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. TASK VALUE MASTER (Internal productivity credit rules)
+-- 6. TASK VALUE MASTER (Internal productivity credit rules)
 CREATE TABLE IF NOT EXISTS task_value_master (
     id TEXT PRIMARY KEY,
     designation_id TEXT REFERENCES job_designations(id) ON DELETE CASCADE,
     designation_title TEXT NOT NULL,
     activity_name TEXT NOT NULL,
-    credit_value NUMERIC(8, 2) NOT NULL, -- e.g. 50.00
+    credit_value NUMERIC(8, 2) NOT NULL,
     default_daily_quota INTEGER NOT NULL DEFAULT 1,
     quota_unit TEXT DEFAULT 'day',
     description TEXT,
@@ -94,11 +104,11 @@ CREATE TABLE IF NOT EXISTS task_value_master (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. DAILY TASKS
+-- 7. DAILY TASKS
 CREATE TABLE IF NOT EXISTS daily_tasks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     task_id TEXT NOT NULL UNIQUE, -- e.g. TSK-202611-001
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
     department_id TEXT REFERENCES departments(id),
     designation_id TEXT REFERENCES job_designations(id),
     district_id TEXT REFERENCES districts(id),
@@ -111,36 +121,36 @@ CREATE TABLE IF NOT EXISTS daily_tasks (
     deadline TIMESTAMPTZ NOT NULL,
     status TEXT NOT NULL DEFAULT 'assigned' CHECK (status IN ('assigned', 'in_progress', 'submitted', 'under_review', 'approved', 'rejected', 'reassigned', 'cancelled')),
     required_evidence_type TEXT DEFAULT 'document',
-    assigned_by UUID REFERENCES staff_profiles(id),
+    assigned_by TEXT REFERENCES staff_profiles(id),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. TASK SUBMISSIONS
+-- 8. TASK SUBMISSIONS
 CREATE TABLE IF NOT EXISTS task_submissions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    task_id UUID NOT NULL REFERENCES daily_tasks(id) ON DELETE CASCADE,
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    task_id TEXT NOT NULL REFERENCES daily_tasks(id) ON DELETE CASCADE,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
     completed_quantity INTEGER NOT NULL DEFAULT 1,
-    reference_id TEXT, -- lead code or booking code
+    reference_id TEXT,
     description TEXT NOT NULL,
     evidence_url TEXT,
     evidence_file_name TEXT,
     submitted_at TIMESTAMPTZ DEFAULT NOW(),
     status TEXT NOT NULL DEFAULT 'submitted' CHECK (status IN ('submitted', 'under_review', 'approved', 'rejected')),
     rejection_reason TEXT,
-    approved_by UUID REFERENCES staff_profiles(id),
+    approved_by TEXT REFERENCES staff_profiles(id),
     approved_at TIMESTAMPTZ,
     awarded_credits NUMERIC(8, 2) DEFAULT 0.00
 );
 
--- 8. TASK APPROVALS (Audit history)
+-- 9. TASK APPROVALS (Audit history)
 CREATE TABLE IF NOT EXISTS task_approvals (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    submission_id UUID NOT NULL REFERENCES task_submissions(id) ON DELETE CASCADE,
-    task_id UUID NOT NULL REFERENCES daily_tasks(id) ON DELETE CASCADE,
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
-    approver_id UUID NOT NULL REFERENCES staff_profiles(id),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    submission_id TEXT NOT NULL REFERENCES task_submissions(id) ON DELETE CASCADE,
+    task_id TEXT NOT NULL REFERENCES daily_tasks(id) ON DELETE CASCADE,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    approver_id TEXT NOT NULL REFERENCES staff_profiles(id),
     action TEXT NOT NULL CHECK (action IN ('approved', 'rejected', 'correction_reversed')),
     rejection_reason TEXT,
     comments TEXT,
@@ -150,24 +160,24 @@ CREATE TABLE IF NOT EXISTS task_approvals (
 
 -- 10. EMPLOYEE WORK CREDITS (Itemized Productivity Ledger)
 CREATE TABLE IF NOT EXISTS employee_work_credits (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
-    submission_id UUID REFERENCES task_submissions(id) ON DELETE SET NULL,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    submission_id TEXT REFERENCES task_submissions(id) ON DELETE SET NULL,
     credit_date DATE NOT NULL DEFAULT CURRENT_DATE,
     task_code TEXT NOT NULL,
     task_description TEXT NOT NULL,
     approved_quantity INTEGER NOT NULL DEFAULT 1,
     per_task_value NUMERIC(8, 2) NOT NULL,
     total_credits NUMERIC(8, 2) NOT NULL,
-    approver_id UUID NOT NULL REFERENCES staff_profiles(id),
+    approver_id TEXT NOT NULL REFERENCES staff_profiles(id),
     approver_name TEXT NOT NULL,
     approval_date TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 11. EMPLOYEE ATTENDANCE (Asia/Kolkata timezone)
 CREATE TABLE IF NOT EXISTS employee_attendance (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
     work_date DATE NOT NULL DEFAULT CURRENT_DATE,
     login_time TIME,
     logout_time TIME,
@@ -185,8 +195,8 @@ CREATE TABLE IF NOT EXISTS employee_attendance (
 
 -- 12. EMPLOYEE LEAVE
 CREATE TABLE IF NOT EXISTS employee_leave (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
     leave_type TEXT NOT NULL CHECK (leave_type IN ('casual', 'sick', 'earned', 'unpaid')),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
@@ -194,14 +204,14 @@ CREATE TABLE IF NOT EXISTS employee_leave (
     reason TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled')),
     applied_at TIMESTAMPTZ DEFAULT NOW(),
-    approved_by UUID REFERENCES staff_profiles(id),
+    approved_by TEXT REFERENCES staff_profiles(id),
     approval_notes TEXT
 );
 
 -- 13. LEADS (General & Residential CRM)
 CREATE TABLE IF NOT EXISTS leads (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    lead_code TEXT NOT NULL UNIQUE, -- e.g. LD-1049
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    lead_code TEXT NOT NULL UNIQUE,
     customer_name TEXT NOT NULL,
     customer_mobile TEXT NOT NULL,
     customer_email TEXT,
@@ -210,7 +220,7 @@ CREATE TABLE IF NOT EXISTS leads (
     service_category TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'qualified', 'booking_ready', 'booking_confirmed', 'follow_up', 'lost')),
     estimated_value NUMERIC(10, 2) DEFAULT 0.00,
-    assigned_staff_id UUID REFERENCES staff_profiles(id),
+    assigned_staff_id TEXT REFERENCES staff_profiles(id),
     follow_up_date DATE,
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -219,9 +229,9 @@ CREATE TABLE IF NOT EXISTS leads (
 
 -- 14. LEAD ACTIVITIES
 CREATE TABLE IF NOT EXISTS lead_activities (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    lead_id TEXT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id),
     activity_type TEXT NOT NULL,
     notes TEXT,
     activity_time TIMESTAMPTZ DEFAULT NOW()
@@ -229,7 +239,7 @@ CREATE TABLE IF NOT EXISTS lead_activities (
 
 -- 15. CORPORATE PROSPECTS (B2B CRM Pipeline)
 CREATE TABLE IF NOT EXISTS corporate_prospects (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     prospect_code TEXT NOT NULL UNIQUE,
     organization_name TEXT NOT NULL,
     business_category TEXT NOT NULL,
@@ -242,7 +252,7 @@ CREATE TABLE IF NOT EXISTS corporate_prospects (
     estimated_annual_value NUMERIC(12, 2) DEFAULT 0.00,
     pipeline_stage TEXT NOT NULL DEFAULT 'new_prospect' CHECK (pipeline_stage IN ('new_prospect', 'contacted', 'interested', 'qualified', 'meeting_scheduled', 'site_inspection', 'quotation', 'negotiation', 'contract_won', 'contract_lost')),
     next_follow_up_date DATE,
-    assigned_staff_id UUID REFERENCES staff_profiles(id),
+    assigned_staff_id TEXT REFERENCES staff_profiles(id),
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -250,7 +260,7 @@ CREATE TABLE IF NOT EXISTS corporate_prospects (
 
 -- 16. PARTNER APPLICATIONS (Service Provider Onboarding)
 CREATE TABLE IF NOT EXISTS partner_applications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     partner_code TEXT NOT NULL UNIQUE,
     partner_name TEXT NOT NULL,
     mobile TEXT NOT NULL,
@@ -261,24 +271,24 @@ CREATE TABLE IF NOT EXISTS partner_applications (
     experience_years INTEGER DEFAULT 1,
     document_verified BOOLEAN DEFAULT FALSE,
     application_status TEXT NOT NULL DEFAULT 'applied' CHECK (application_status IN ('applied', 'document_collected', 'verified', 'approved', 'activated', 'rejected')),
-    assigned_caller_id UUID REFERENCES staff_profiles(id),
+    assigned_caller_id TEXT REFERENCES staff_profiles(id),
     notes TEXT,
     submitted_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 17. BOOKING PIPELINE (Existing Doorbly booking references)
+-- 17. BOOKING PIPELINE
 CREATE TABLE IF NOT EXISTS booking_pipeline (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    booking_code TEXT NOT NULL UNIQUE, -- e.g. DBL-BK-8891
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    booking_code TEXT NOT NULL UNIQUE,
     customer_name TEXT NOT NULL,
     customer_mobile TEXT NOT NULL,
     district_id TEXT REFERENCES districts(id),
     service_title TEXT NOT NULL,
-    service_subtotal NUMERIC(10, 2) NOT NULL, -- Completed service value before taxes
-    applicable_tax NUMERIC(10, 2) NOT NULL,   -- 18% GST
-    customer_payable NUMERIC(10, 2) NOT NULL, -- Total customer billing
-    doorbly_commission_rate NUMERIC(5, 2) DEFAULT 20.00, -- 20% markup
+    service_subtotal NUMERIC(10, 2) NOT NULL,
+    applicable_tax NUMERIC(10, 2) NOT NULL,
+    customer_payable NUMERIC(10, 2) NOT NULL,
+    doorbly_commission_rate NUMERIC(5, 2) DEFAULT 20.00,
     doorbly_commission NUMERIC(10, 2) NOT NULL,
     partner_payout NUMERIC(10, 2) NOT NULL,
     booking_status TEXT NOT NULL DEFAULT 'pending' CHECK (booking_status IN ('pending', 'assigned', 'in_progress', 'completed', 'cancelled', 'refunded')),
@@ -286,19 +296,19 @@ CREATE TABLE IF NOT EXISTS booking_pipeline (
     scheduled_date TIMESTAMPTZ NOT NULL,
     completed_date TIMESTAMPTZ,
     assigned_partner_name TEXT,
-    participating_staff_id UUID REFERENCES staff_profiles(id),
+    participating_staff_id TEXT REFERENCES staff_profiles(id),
     reconciliation_status TEXT DEFAULT 'pending' CHECK (reconciliation_status IN ('reconciled', 'pending', 'disputed')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 19. DEPARTMENT DAILY REPORTS
+-- 18. DEPARTMENT DAILY REPORTS
 CREATE TABLE IF NOT EXISTS department_daily_reports (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     report_date DATE NOT NULL DEFAULT CURRENT_DATE,
     department_id TEXT REFERENCES departments(id),
     district_id TEXT REFERENCES districts(id),
-    staff_id UUID REFERENCES staff_profiles(id),
+    staff_id TEXT REFERENCES staff_profiles(id),
     assigned_tasks INTEGER DEFAULT 0,
     completed_tasks INTEGER DEFAULT 0,
     pending_tasks INTEGER DEFAULT 0,
@@ -314,19 +324,19 @@ CREATE TABLE IF NOT EXISTS department_daily_reports (
     UNIQUE(report_date, department_id, staff_id)
 );
 
--- 20. COMPLAINT TICKETS (Customer Support)
+-- 19. COMPLAINT TICKETS (Customer Support)
 CREATE TABLE IF NOT EXISTS complaint_tickets (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     ticket_code TEXT NOT NULL UNIQUE,
     customer_id TEXT NOT NULL,
     customer_name TEXT NOT NULL,
-    booking_id UUID REFERENCES booking_pipeline(id),
+    booking_id TEXT REFERENCES booking_pipeline(id),
     district_id TEXT REFERENCES districts(id),
     complaint_category TEXT NOT NULL,
     description TEXT NOT NULL,
     priority TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('critical', 'high', 'medium', 'low')),
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'escalated', 'closed')),
-    assigned_staff_id UUID REFERENCES staff_profiles(id),
+    assigned_staff_id TEXT REFERENCES staff_profiles(id),
     resolution_notes TEXT,
     is_customer_confirmed BOOLEAN DEFAULT FALSE,
     escalated_to_manager BOOLEAN DEFAULT FALSE,
@@ -334,10 +344,10 @@ CREATE TABLE IF NOT EXISTS complaint_tickets (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 21. STAFF NOTIFICATIONS
+-- 20. STAFF NOTIFICATIONS
 CREATE TABLE IF NOT EXISTS staff_notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    staff_id UUID NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    staff_id TEXT NOT NULL REFERENCES staff_profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
     notification_type TEXT NOT NULL,
@@ -346,24 +356,24 @@ CREATE TABLE IF NOT EXISTS staff_notifications (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 22. SYSTEM ANNOUNCEMENTS
+-- 21. SYSTEM ANNOUNCEMENTS
 CREATE TABLE IF NOT EXISTS system_announcements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('normal', 'important', 'urgent')),
     target_audience TEXT NOT NULL DEFAULT 'all' CHECK (target_audience IN ('all', 'district', 'department')),
     target_district_id TEXT REFERENCES districts(id),
     target_department_id TEXT REFERENCES departments(id),
-    published_by UUID REFERENCES staff_profiles(id),
+    published_by TEXT REFERENCES staff_profiles(id),
     published_by_name TEXT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 23. SYSTEM AUDIT LOGS
+-- 22. SYSTEM AUDIT LOGS
 CREATE TABLE IF NOT EXISTS system_audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     actor_id TEXT NOT NULL,
     actor_name TEXT NOT NULL,
     actor_role TEXT NOT NULL,
@@ -389,6 +399,23 @@ CREATE INDEX IF NOT EXISTS idx_corp_prospects ON corporate_prospects(district_id
 CREATE INDEX IF NOT EXISTS idx_bookings_district ON booking_pipeline(district_id, booking_status);
 
 -- =========================================================================
+-- SECURITY DEFINER FUNCTION FOR RLS (PREVENTS INFINITE RECURSION)
+-- =========================================================================
+CREATE OR REPLACE FUNCTION get_auth_staff_permission()
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+    SELECT permission_level 
+    FROM staff_profiles 
+    WHERE (firebase_uid)::text = (auth.uid())::text 
+       OR (id)::text = (auth.uid())::text
+    LIMIT 1;
+$$;
+
+-- =========================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- =========================================================================
 ALTER TABLE staff_profiles ENABLE ROW LEVEL SECURITY;
@@ -397,26 +424,88 @@ ALTER TABLE task_submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employee_work_credits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employee_attendance ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY staff_view_policy ON staff_profiles
+-- Clean up any existing policies before re-creating
+DROP POLICY IF EXISTS staff_view_policy ON staff_profiles;
+DROP POLICY IF EXISTS staff_select_policy ON staff_profiles;
+DROP POLICY IF EXISTS staff_update_policy ON staff_profiles;
+DROP POLICY IF EXISTS tasks_access_policy ON daily_tasks;
+DROP POLICY IF EXISTS submission_approval_policy ON task_submissions;
+DROP POLICY IF EXISTS submissions_select_policy ON task_submissions;
+DROP POLICY IF EXISTS submissions_insert_policy ON task_submissions;
+DROP POLICY IF EXISTS submissions_update_policy ON task_submissions;
+DROP POLICY IF EXISTS credits_select_policy ON employee_work_credits;
+DROP POLICY IF EXISTS credits_insert_policy ON employee_work_credits;
+DROP POLICY IF EXISTS attendance_select_policy ON employee_attendance;
+DROP POLICY IF EXISTS attendance_insert_update_policy ON employee_attendance;
+
+-- 1. Staff Profiles Policies (Fixed recursion & type-casting)
+CREATE POLICY staff_select_policy ON staff_profiles
     FOR SELECT USING (
-        auth.uid() = firebase_uid OR 
-        EXISTS (SELECT 1 FROM staff_profiles s WHERE s.firebase_uid = auth.uid() AND s.permission_level IN ('admin', 'manager', 'coordinator'))
+        (auth.uid())::text = (firebase_uid)::text OR 
+        (auth.uid())::text = (id)::text OR
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
     );
 
+CREATE POLICY staff_update_policy ON staff_profiles
+    FOR UPDATE USING (
+        (auth.uid())::text = (firebase_uid)::text OR 
+        (auth.uid())::text = (id)::text OR
+        get_auth_staff_permission() = 'admin'
+    );
+
+-- 2. Daily Tasks Policies
 CREATE POLICY tasks_access_policy ON daily_tasks
     FOR ALL USING (
-        staff_id IN (SELECT id FROM staff_profiles WHERE firebase_uid = auth.uid()) OR
-        EXISTS (SELECT 1 FROM staff_profiles s WHERE s.firebase_uid = auth.uid() AND s.permission_level IN ('admin', 'manager', 'coordinator'))
+        (staff_id)::text = (auth.uid())::text OR
+        (staff_id)::text IN (SELECT (id)::text FROM staff_profiles WHERE (firebase_uid)::text = (auth.uid())::text) OR
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
     );
 
-CREATE POLICY submission_approval_policy ON task_submissions
+-- 3. Task Submissions Policies (SELECT, INSERT, UPDATE)
+CREATE POLICY submissions_select_policy ON task_submissions
+    FOR SELECT USING (
+        (staff_id)::text = (auth.uid())::text OR
+        (staff_id)::text IN (SELECT (id)::text FROM staff_profiles WHERE (firebase_uid)::text = (auth.uid())::text) OR
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
+    );
+
+CREATE POLICY submissions_insert_policy ON task_submissions
+    FOR INSERT WITH CHECK (
+        (staff_id)::text = (auth.uid())::text OR
+        (staff_id)::text IN (SELECT (id)::text FROM staff_profiles WHERE (firebase_uid)::text = (auth.uid())::text)
+    );
+
+CREATE POLICY submissions_update_policy ON task_submissions
     FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM staff_profiles s 
-            WHERE s.firebase_uid = auth.uid() 
-            AND s.permission_level IN ('admin', 'manager', 'coordinator') 
-            AND s.id != task_submissions.staff_id
-        )
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
+    );
+
+-- 4. Work Credits Policies
+CREATE POLICY credits_select_policy ON employee_work_credits
+    FOR SELECT USING (
+        (staff_id)::text = (auth.uid())::text OR
+        (staff_id)::text IN (SELECT (id)::text FROM staff_profiles WHERE (firebase_uid)::text = (auth.uid())::text) OR
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
+    );
+
+CREATE POLICY credits_insert_policy ON employee_work_credits
+    FOR INSERT WITH CHECK (
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
+    );
+
+-- 5. Attendance Policies
+CREATE POLICY attendance_select_policy ON employee_attendance
+    FOR SELECT USING (
+        (staff_id)::text = (auth.uid())::text OR
+        (staff_id)::text IN (SELECT (id)::text FROM staff_profiles WHERE (firebase_uid)::text = (auth.uid())::text) OR
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
+    );
+
+CREATE POLICY attendance_insert_update_policy ON employee_attendance
+    FOR ALL USING (
+        (staff_id)::text = (auth.uid())::text OR
+        (staff_id)::text IN (SELECT (id)::text FROM staff_profiles WHERE (firebase_uid)::text = (auth.uid())::text) OR
+        get_auth_staff_permission() IN ('admin', 'manager', 'coordinator')
     );
 
 -- =========================================================================
@@ -461,6 +550,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- INITIAL SEED: DEPARTMENTS
 -- =========================================================================
 INSERT INTO departments (id, name, code, description, is_active) VALUES
+('dept_central_exec', 'Central Executive Administration', 'CEA', 'Statewide governance, financial oversight, and directorate', true),
 ('dept_district_mgmt', 'District Operations & Management', 'DOM', 'Overall district revenue, coordinators, and field operations', true),
 ('dept_gen_ops', 'General Operations & Tele-calling', 'GOT', 'Customer calls, general inquiries, and booking confirmations', true),
 ('dept_corp_sales', 'Corporate Services & B2B Contracts', 'CSB', 'Corporate sales, facility management, and institutional contracts', true),
@@ -468,6 +558,30 @@ INSERT INTO departments (id, name, code, description, is_active) VALUES
 ('dept_cust_support', 'Customer Support & Quality Assurance', 'CSQ', 'Issue ticketing, grievance resolution, and feedback', true),
 ('dept_lead_gen', 'Lead Generation & Field Outreach', 'LGF', 'Residential and corporate outbound lead acquisition', true),
 ('dept_hr_admin', 'Human Resources & Talent Management', 'HRT', 'Staff recruitment, onboarding, attendance, and remote audit', true),
-('dept_tech_it', 'Technology & Web Development', 'TWD', 'Workstation software, booking APIs, database, and infrastructure', true),
-('dept_central_exec', 'Central Executive Administration', 'CEA', 'Statewide governance, financial oversight, and directorate', true)
+('dept_tech_it', 'Technology & Web Development', 'TWD', 'Workstation software, booking APIs, database, and infrastructure', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- =========================================================================
+-- INITIAL SEED: JOB DESIGNATIONS (PREVENTS FOREIGN KEY VIOLATIONS)
+-- =========================================================================
+INSERT INTO job_designations (id, title, department_id, system_role, description, is_active) VALUES
+('dm', 'District Manager (DM)', 'dept_district_mgmt', 'district_manager', 'District P&L, daily target achievement, team supervision', true),
+('dc', 'District Coordinator (DC)', 'dept_district_mgmt', 'district_coordinator', 'Daily task allocation, attendance verification, local dispatch', true),
+('hr_exec', 'HR Executive', 'dept_hr_admin', 'employee', 'Talent recruitment, attendance audit, onboarding', true),
+('tele_caller', 'Tele Caller – General Operations', 'dept_gen_ops', 'employee', 'Customer inquiry follow-up, inbound bookings, quality checks', true),
+('corp_caller', 'Corporate Caller – Corporate Services', 'dept_corp_sales', 'employee', 'B2B institutional outreach, facility contracts, quotation dispatch', true),
+('partner_caller', 'Partner Caller – Service Provider Onboarding', 'dept_partner_onboard', 'employee', 'Technician acquisition, document vetting, partner activation', true),
+('cust_support', 'Customer Support Executive', 'dept_cust_support', 'employee', 'Grievance ticketing, resolution SLA tracking, customer pacification', true),
+('lead_gen_gen', 'Lead Generation Executive – General', 'dept_lead_gen', 'employee', 'Multi-category residential and commercial lead sourcing', true),
+('lead_gen_res', 'Residential Lead Generation Executive', 'dept_lead_gen', 'employee', 'Apartment society, gated community, and residential outreach', true),
+('lead_gen_corp', 'Corporate Lead Generation Executive', 'dept_lead_gen', 'employee', 'Industrial estate, SME, hotel, and hospital contract sourcing', true),
+('tech_exec', 'Technical Executive / IT Support Engineer', 'dept_tech_it', 'employee', 'Workstation portal support, system configuration, hardware setup', true),
+('software_dev', 'Full-Stack Software Developer', 'dept_tech_it', 'employee', 'Frontend workstation features, Supabase/Firebase integrations', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- =========================================================================
+-- INITIAL SEED: INITIAL ADMIN STAFF PROFILE
+-- =========================================================================
+INSERT INTO staff_profiles (id, employee_id, full_name, email, mobile, department_id, designation_id, system_role, district_id, status, permission_level) VALUES
+('staff-admin-01', 'DBL-OD-001', 'Debabrata Mohanta', 'debabratamohanta884@gmail.com', '+91 94370 12345', 'dept_central_exec', 'dm', 'super_admin', 'khordha', 'active', 'admin')
 ON CONFLICT (id) DO NOTHING;
