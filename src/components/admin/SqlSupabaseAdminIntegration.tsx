@@ -119,6 +119,7 @@ export const SqlSupabaseAdminIntegration: React.FC<SqlSupabaseAdminIntegrationPr
     success: boolean;
     latencyMs?: number;
     message: string;
+    details?: string;
   } | null>(null);
 
   // SQL Query Console States
@@ -489,25 +490,57 @@ export const SqlSupabaseAdminIntegration: React.FC<SqlSupabaseAdminIntegrationPr
       {/* Ping Results Banner (if tested) */}
       {testResult && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center justify-between transition animate-in fade-in ${
+          className={`p-3.5 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition animate-in fade-in ${
             testResult.success
               ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
               : 'bg-amber-50 border-amber-200 text-amber-900'
           }`}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-start space-x-2.5">
             {testResult.success ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             ) : (
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             )}
-            <span className="font-semibold">{testResult.message}</span>
+            <div>
+              <span className="font-semibold block">{testResult.message}</span>
+              {testResult.details && (
+                <span className="text-[11px] text-gray-600 block mt-0.5 font-mono">
+                  {testResult.details}
+                </span>
+              )}
+            </div>
           </div>
-          {testResult.latencyMs !== undefined && (
-            <span className="px-2 py-0.5 bg-white/70 rounded font-mono font-bold text-[11px]">
-              {testResult.latencyMs} ms
-            </span>
-          )}
+          <div className="flex items-center space-x-2 shrink-0 self-end sm:self-center">
+            {testResult.latencyMs !== undefined && (
+              <span className="px-2 py-0.5 bg-white/70 rounded font-mono font-bold text-[11px] border border-gray-200">
+                {testResult.latencyMs} ms
+              </span>
+            )}
+            {testResult.message.includes('pending migration') && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(COMPLETE_DOORBLY_SCHEMA_SQL);
+                  showToast('Copied full 23-table schema SQL migration to clipboard!');
+                }}
+                className="px-2 py-1 bg-[#0F766E] hover:bg-[#123C45] text-white text-[11px] font-semibold rounded shadow-xs"
+              >
+                Copy SQL Migration
+              </button>
+            )}
+            {!testResult.success && (
+              <button
+                onClick={() => {
+                  setCustomUrl(config.url || '');
+                  setCustomKey('');
+                  setIsConfigModalOpen(true);
+                }}
+                className="px-2 py-1 bg-amber-700 hover:bg-amber-800 text-white text-[11px] font-semibold rounded shadow-xs"
+              >
+                Update Key
+              </button>
+            )}
+          </div>
         </div>
       )}
 

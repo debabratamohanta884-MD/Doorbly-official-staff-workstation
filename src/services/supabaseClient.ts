@@ -14,9 +14,11 @@ const LS_AUTOSYNC_KEY = 'doorbly_supabase_autosync';
 export function getEffectiveSupabaseUrl(): string {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(LS_URL_KEY);
-    if (saved && saved.trim().startsWith('https://')) return saved.trim();
+    if (saved && saved.trim().startsWith('https://')) return saved.trim().replace(/\/+$/, '');
   }
-  return import.meta.env.VITE_SUPABASE_URL || '';
+  const envUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (envUrl && envUrl.trim().startsWith('https://')) return envUrl.trim().replace(/\/+$/, '');
+  return 'https://vteiyljzrqvlfujipdlf.supabase.co';
 }
 
 export function getEffectiveSupabaseAnonKey(): string {
@@ -99,14 +101,14 @@ export const getSupabaseConfig = () => {
 
 export function setCustomSupabaseConfig(url: string, anonKey: string): { success: boolean; error?: string } {
   try {
-    const trimmedUrl = url.trim();
+    const trimmedUrl = url.trim().replace(/\/+$/, '');
     const trimmedKey = anonKey.trim();
 
     if (!trimmedUrl.startsWith('https://')) {
       return { success: false, error: 'Supabase URL must start with https://' };
     }
     if (trimmedKey.length < 15) {
-      return { success: false, error: 'Anon / Service key appears too short or invalid' };
+      return { success: false, error: 'Anon / Service key appears too short or invalid (must be a valid Supabase key)' };
     }
 
     localStorage.setItem(LS_URL_KEY, trimmedUrl);
@@ -674,11 +676,13 @@ export async function persistToSupabaseAsync(tableName: string, data: any | any[
 
 /**
  * Test connectivity to the configured Supabase instance
+ * Robustly tests endpoint, auth validity, and table migration status.
  */
 export async function testSupabaseConnection(): Promise<{
   success: boolean;
   latencyMs?: number;
   message: string;
+  details?: string;
 }> {
   if (!isSupabaseConfigured()) {
     return {
@@ -695,24 +699,128 @@ export async function testSupabaseConnection(): Promise<{
     };
   }
 
+  const url = getEffectiveSupabaseUrl().replace(/\/+$/, '');
+  const key = getEffectiveSupabaseAnonKey().trim();
   const startTime = performance.now();
+
   try {
-    // Attempt to probe departments or any base table
-    const { error } = await client.from('departments').select('id', { count: 'exact', head: true });
+    // Probe departments using GET with limit(1) - NEVER use head:true because HTTP HEAD strips response bodies on errors!
+    const { data, error, status, statusText } = await client
+      .from('departments')
+      .select('id')
+      .limit(1);
+
     const latency = Math.round(performance.now() - startTime);
 
     if (error) {
-      if (error.code === '42P01' || error.message.includes('relation') || error.message.includes('does not exist')) {
+      const errCode = String((error as any).code || '');
+      const errMsg = String((error as any).message || '');
+      const errDetails = String((error as any).details || '');
+      const errHint = String((error as any).hint || '');
+
+      console.warn('[Supabase Connection Probe]', { status, statusText, errCode, errMsg, errDetails, errHint });
+
+      // Case 1: PostgreSQL 42P01 / Relation does not exist -> Supabase is CONNECTED, but tables not migrated!
+      if (
+        errCode === '42P01' ||
+        errMsg.toLowerCase().includes('relation') ||
+        errMsg.toLowerCase().includes('does not exist') ||
+        (status === 404 && (errCode === '42P01' || errMsg.includes('departments') || !errMsg))
+      ) {
         return {
           success: true,
           latencyMs: latency,
-          message: `Connected successfully (${latency}ms)! PostgreSQL is online, but tables are pending migration. Run the schema SQL script in Supabase SQL Editor.`
+          message: `Connected successfully (${latency}ms)! PostgreSQL is online, but database tables are pending migration. Click 'Copy Full Migration SQL' and run it in your Supabase SQL Editor.`
         };
       }
+
+      // Case 2: Authentication failure (401 / Invalid API Key / JWT)
+      if (
+        status === 401 ||
+        errCode === 'PGRST301' ||
+        errMsg.toLowerCase().includes('invalid api key') ||
+        errMsg.toLowerCase().includes('no api key') ||
+        errMsg.toLowerCase().includes('jwt')
+      ) {
+        return {
+          success: false,
+          latencyMs: latency,
+          message: `Authentication failed (HTTP 401): ${errMsg || 'Invalid API Key'}. Please check the anon/public key in your Supabase Dashboard (Settings -> API).`
+        };
+      }
+
+      // Case 3: Paused Project (503 Service Unavailable)
+      if (
+        status === 503 ||
+        errMsg.toLowerCase().includes('paused') ||
+        errDetails.toLowerCase().includes('paused')
+      ) {
+        return {
+          success: false,
+          latencyMs: latency,
+          message: `Supabase Project Paused (HTTP 503): This project is paused due to inactivity on the free tier. Unpause it in your Supabase Dashboard.`
+        };
+      }
+
+      // Case 4: Row Level Security restriction (42501 / 403)
+      if (
+        errCode === '42501' ||
+        status === 403 ||
+        errMsg.toLowerCase().includes('permission denied')
+      ) {
+        return {
+          success: true,
+          latencyMs: latency,
+          message: `Connected successfully (${latency}ms)! Tables are present (RLS policies are actively protecting rows).`
+        };
+      }
+
+      // If error message is empty or generic, perform direct fetch to get precise HTTP response
+      try {
+        const diagRes = await fetch(`${url}/rest/v1/departments?select=id&limit=1`, {
+          method: 'GET',
+          headers: {
+            apikey: key,
+            Authorization: `Bearer ${key}`
+          }
+        });
+
+        if (diagRes.status === 401) {
+          const body = await diagRes.json().catch(() => ({}));
+          return {
+            success: false,
+            latencyMs: latency,
+            message: `Authentication error (HTTP 401): ${body.message || 'Invalid or expired anon key'}. Check Project Settings -> API in Supabase.`
+          };
+        }
+
+        if (diagRes.status === 404) {
+          const body = await diagRes.json().catch(() => ({}));
+          if (body.code === '42P01' || (body.message && body.message.includes('relation'))) {
+            return {
+              success: true,
+              latencyMs: latency,
+              message: `Connected successfully (${latency}ms)! PostgreSQL is online, but database tables are pending migration. Run the schema SQL script in Supabase SQL Editor.`
+            };
+          }
+        }
+
+        if (diagRes.status === 503) {
+          return {
+            success: false,
+            latencyMs: latency,
+            message: `Supabase Project is Paused or under maintenance (HTTP 503). Unpause it in your Supabase Dashboard.`
+          };
+        }
+      } catch {
+        // Fallback to error below
+      }
+
+      const display = errMsg || errDetails || `HTTP ${status || 'Error'}`;
       return {
         success: false,
         latencyMs: latency,
-        message: `Connection error: ${error.message} (Code: ${error.code || 'UNKNOWN'})`
+        message: `Connection issue: ${display} (Code: ${errCode || status || 'UNKNOWN'})`
       };
     }
 
@@ -723,10 +831,23 @@ export async function testSupabaseConnection(): Promise<{
     };
   } catch (err: any) {
     const latency = Math.round(performance.now() - startTime);
+
+    // Check if host is reachable at all
+    try {
+      const pingAuth = await fetch(`${url}/auth/v1/health`);
+      if (pingAuth.status === 401 || pingAuth.ok) {
+        return {
+          success: false,
+          latencyMs: latency,
+          message: `Supabase host reached (${latency}ms), but request was rejected. Please verify your Anon Key.`
+        };
+      }
+    } catch {}
+
     return {
       success: false,
       latencyMs: latency,
-      message: `Network/CORS error reaching Supabase: ${err.message || 'Failed to fetch'}`
+      message: `Network/CORS error reaching Supabase (${latency}ms): ${err.message || 'Failed to fetch'}. Please verify URL (${url}).`
     };
   }
 }
@@ -1294,10 +1415,11 @@ export async function verifyAllTablesIntegrity(): Promise<{
     try {
       const { count, error } = await client
         .from(dbTableName)
-        .select('*', { count: 'exact', head: true });
+        .select('id', { count: 'exact' })
+        .limit(1);
 
       if (error) {
-        results[dbTableName] = { exists: false, error: error.message };
+        results[dbTableName] = { exists: false, error: error.message || error.code || 'Table pending creation' };
       } else {
         results[dbTableName] = { exists: true, rowCount: count ?? 0 };
         availableCount++;
