@@ -11,6 +11,7 @@ interface DoorblyLogoProps {
   rounded?: boolean;
   animateFlip?: boolean;
   showOrbitLight?: boolean;
+  hideSubtitleOnMobile?: boolean;
 }
 
 export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
@@ -22,7 +23,8 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
   badgeText,
   rounded = true,
   animateFlip = false,
-  showOrbitLight = false
+  showOrbitLight = false,
+  hideSubtitleOnMobile = false
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -133,6 +135,8 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
           {subtitle && (
             <p
               className={`text-[11px] truncate ${
+                hideSubtitleOnMobile ? 'hidden sm:block' : ''
+              } ${
                 textVariant === 'light' ? 'text-teal-200/80' : 'text-gray-500'
               }`}
             >

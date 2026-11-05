@@ -35,7 +35,7 @@ import {
   Info
 } from 'lucide-react';
 import { StaffProfile } from '../../types/doorbly';
-import { COMPLETE_DOORBLY_SCHEMA_SQL } from '../../sql/schemaSql';
+import { COMPLETE_DOORBLY_SCHEMA_SQL, SUPABASE_PERMISSIONS_FIX_SQL } from '../../sql/schemaSql';
 import {
   isSupabaseConfigured,
   getSupabaseConfig,
@@ -523,12 +523,23 @@ export const SqlSupabaseAdminIntegration: React.FC<SqlSupabaseAdminIntegrationPr
                   navigator.clipboard.writeText(COMPLETE_DOORBLY_SCHEMA_SQL);
                   showToast('Copied full 23-table schema SQL migration to clipboard!');
                 }}
-                className="px-2 py-1 bg-[#0F766E] hover:bg-[#123C45] text-white text-[11px] font-semibold rounded shadow-xs"
+                className="px-2.5 py-1 bg-[#0F766E] hover:bg-[#123C45] text-white text-[11px] font-semibold rounded shadow-xs"
               >
                 Copy SQL Migration
               </button>
             )}
-            {!testResult.success && (
+            {(testResult.message.includes('permission denied') || testResult.details?.includes('permission denied')) && (
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(SUPABASE_PERMISSIONS_FIX_SQL);
+                  showToast('Copied Permissions Fix SQL! Paste and run it in Supabase SQL Editor.');
+                }}
+                className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold rounded shadow-xs"
+              >
+                Copy Permissions Fix SQL
+              </button>
+            )}
+            {!testResult.success && !testResult.message.includes('permission denied') && (
               <button
                 onClick={() => {
                   setCustomUrl(config.url || '');
@@ -578,7 +589,7 @@ export const SqlSupabaseAdminIntegration: React.FC<SqlSupabaseAdminIntegrationPr
       </div>
 
       {/* Subtab Navigation Bar */}
-      <div className="bg-white border border-gray-200 rounded-xl p-1.5 shadow-xs flex items-center space-x-1 text-xs">
+      <div className="bg-white border border-gray-200 rounded-xl p-1.5 shadow-xs flex items-center space-x-1.5 overflow-x-auto horizontal-scroll-container text-xs">
         {[
           { id: 'query_console', label: 'Interactive SQL Console', icon: Code },
           { id: 'table_browser', label: `23 Tables Browser (${TABLE_METADATA_MASTER.length})`, icon: TableIcon },
@@ -591,7 +602,7 @@ export const SqlSupabaseAdminIntegration: React.FC<SqlSupabaseAdminIntegrationPr
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id as SubTab)}
-              className={`px-3.5 py-2 rounded-lg font-semibold transition flex items-center space-x-2 cursor-pointer ${
+              className={`px-3.5 py-2 rounded-lg font-semibold transition shrink-0 whitespace-nowrap flex items-center space-x-2 cursor-pointer ${
                 isActive
                   ? 'bg-[#0F766E] text-white shadow-xs'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'

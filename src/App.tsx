@@ -5,6 +5,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import {
+  LayoutDashboard,
+  CheckSquare,
+  CheckCircle2,
+  Wallet,
+  Clock,
+  Menu
+} from 'lucide-react';
 import { StaffProfile } from './types/doorbly';
 import { StorageEngine } from './services/storageEngine';
 import { Navbar } from './components/layout/Navbar';
@@ -115,11 +123,13 @@ export default function App() {
         onUserChange={handleUserChange}
         onLogout={handleLogout}
         onOpenBackendModal={() => setIsBackendModalOpen(true)}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+        onToggleMobileSidebar={() => setIsMobileSidebarOpen(prev => !prev)}
       />
 
       {/* Main Body Layout with Sidebar */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Rapido-Style Sidebar */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Rapido-Style Sidebar (Mobile Drawer & Desktop Static) */}
         <Sidebar
           currentUser={currentUser}
           activeTab={activeTab}
@@ -130,10 +140,12 @@ export default function App() {
           onLogout={handleLogout}
           pendingApprovalsCount={pendingApprovalsCount}
           assignedTasksCount={assignedTasksCount}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
 
-        {/* Dynamic Workspace Container */}
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        {/* Dynamic Workspace Container - pb-20 on mobile ensures bottom navigation never covers content */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-3.5 sm:p-5 lg:p-8 max-w-7xl mx-auto w-full pb-20 lg:pb-8">
           {activeTab === 'dashboard' && renderDashboard()}
           {activeTab === 'tasks' && <MyTasksView currentUser={currentUser} />}
           {activeTab === 'submissions' && <MyTasksView currentUser={currentUser} />}
@@ -157,6 +169,85 @@ export default function App() {
           {activeTab === 'admin_panel' && <CentralAdminPanel currentUser={currentUser} />}
         </main>
       </div>
+
+      {/* Sticky Mobile Quick Navigation Bar (Screen width < 1024px) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-gray-200 px-1.5 py-1.5 flex items-center justify-around shadow-lg">
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-medium transition cursor-pointer ${
+            activeTab === 'dashboard' ? 'text-[#0F766E] font-bold' : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4 mb-0.5" />
+          <span>Home</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('tasks')}
+          className={`flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-medium transition cursor-pointer relative ${
+            activeTab === 'tasks' ? 'text-[#0F766E] font-bold' : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <CheckSquare className="w-4 h-4 mb-0.5" />
+          <span>Tasks</span>
+          {assignedTasksCount > 0 && (
+            <span className="absolute top-0 right-1 w-3.5 h-3.5 rounded-full bg-[#0F766E] text-white text-[9px] flex items-center justify-center font-bold">
+              {assignedTasksCount}
+            </span>
+          )}
+        </button>
+
+        {(currentUser.systemRole === 'super_admin' || currentUser.systemRole === 'district_manager' || currentUser.systemRole === 'district_coordinator' || currentUser.permissionLevel === 'admin' || currentUser.permissionLevel === 'manager') ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab('approvals')}
+            className={`flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-medium transition cursor-pointer relative ${
+              activeTab === 'approvals' ? 'text-[#0F766E] font-bold' : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 mb-0.5" />
+            <span>Approvals</span>
+            {pendingApprovalsCount > 0 && (
+              <span className="absolute top-0 right-0 w-3.5 h-3.5 rounded-full bg-amber-500 text-white text-[9px] flex items-center justify-center font-bold">
+                {pendingApprovalsCount}
+              </span>
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setActiveTab('attendance')}
+            className={`flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-medium transition cursor-pointer ${
+              activeTab === 'attendance' ? 'text-[#0F766E] font-bold' : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <Clock className="w-4 h-4 mb-0.5" />
+            <span>Attendance</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('wallet')}
+          className={`flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-medium transition cursor-pointer ${
+            activeTab === 'wallet' ? 'text-[#0F766E] font-bold' : 'text-gray-500 hover:text-gray-900'
+          }`}
+        >
+          <Wallet className="w-4 h-4 mb-0.5" />
+          <span>Wallet</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="flex flex-col items-center py-1 px-2 rounded-lg text-[10px] font-medium text-gray-500 hover:text-gray-900 transition cursor-pointer"
+        >
+          <Menu className="w-4 h-4 mb-0.5" />
+          <span>Menu</span>
+        </button>
+      </nav>
 
       {/* Backend & Database Connectivity Modal */}
       <BackendStatusModal

@@ -16,7 +16,9 @@ import {
   Database,
   Building2,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Menu,
+  X
 } from 'lucide-react';
 import { StaffProfile } from '../../types/doorbly';
 import { StorageEngine } from '../../services/storageEngine';
@@ -28,13 +30,17 @@ interface NavbarProps {
   onUserChange: (newUser: StaffProfile) => void;
   onLogout: () => void;
   onOpenBackendModal: () => void;
+  isMobileSidebarOpen?: boolean;
+  onToggleMobileSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onUserChange,
   onLogout,
-  onOpenBackendModal
+  onOpenBackendModal,
+  isMobileSidebarOpen = false,
+  onToggleMobileSidebar
 }) => {
   const [istTime, setIstTime] = useState<string>('');
   const [istDate, setIstDate] = useState<string>('');
@@ -82,27 +88,41 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FFFFFF] border-b border-gray-200 px-4 lg:px-6 py-2.5 flex items-center justify-between shadow-xs">
-      {/* Brand & District Info */}
-      <div className="flex items-center space-x-3">
-        <DoorblyLogo
-          size="md"
-          showText={true}
-          badgeText="Workstation"
-          subtitle="Odisha Remote Operations"
-          animateFlip={true}
-          showOrbitLight={true}
-        />
+    <header className="sticky top-0 z-40 bg-[#FFFFFF] border-b border-gray-200 px-3 sm:px-4 lg:px-6 py-2 flex items-center justify-between shadow-xs">
+      {/* Brand & Mobile Hamburger */}
+      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        {/* Mobile Sidebar Hamburger Toggle */}
+        <button
+          type="button"
+          onClick={onToggleMobileSidebar}
+          className="lg:hidden p-1.5 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer shrink-0 border border-gray-200"
+          aria-label={isMobileSidebarOpen ? 'Close menu' : 'Open menu'}
+          title="Toggle Navigation Menu"
+        >
+          {isMobileSidebarOpen ? <X className="w-5 h-5 text-gray-800" /> : <Menu className="w-5 h-5 text-gray-800" />}
+        </button>
+
+        <div className="min-w-0">
+          <DoorblyLogo
+            size="sm"
+            showText={true}
+            badgeText="Workstation"
+            subtitle="Odisha Remote Operations"
+            animateFlip={true}
+            showOrbitLight={true}
+            hideSubtitleOnMobile={true}
+          />
+        </div>
 
         {/* Assigned District Badge */}
-        <div className="hidden md:flex items-center space-x-1.5 bg-[#F7F9FA] border border-gray-200 text-gray-700 px-2.5 py-1 rounded-md text-xs font-medium">
+        <div className="hidden md:flex items-center space-x-1.5 bg-[#F7F9FA] border border-gray-200 text-gray-700 px-2.5 py-1 rounded-md text-xs font-medium shrink-0">
           <MapPin className="w-3.5 h-3.5 text-[#0F766E]" />
           <span>{currentUser.districtName}</span>
         </div>
       </div>
 
       {/* Center: Live IST Clock */}
-      <div className="hidden lg:flex items-center space-x-2 bg-[#F7F9FA] border border-gray-200 px-3 py-1 rounded-md text-xs">
+      <div className="hidden lg:flex items-center space-x-2 bg-[#F7F9FA] border border-gray-200 px-3 py-1 rounded-md text-xs shrink-0">
         <Clock className="w-3.5 h-3.5 text-[#0F766E]" />
         <span className="text-gray-500 font-normal">{istDate}</span>
         <span className="text-gray-300">|</span>
@@ -111,16 +131,16 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center space-x-2.5">
+      <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
         {/* Backend Connectivity Status Button */}
         <button
           onClick={onOpenBackendModal}
           title="Supabase & Database Connectivity"
-          className="flex items-center space-x-1 text-xs px-2.5 py-1 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition"
+          className="flex items-center space-x-1 text-xs px-2 sm:px-2.5 py-1 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition cursor-pointer"
         >
           <Database className={`w-3.5 h-3.5 ${supabaseOnline ? 'text-green-600' : 'text-amber-500'}`} />
           <span className="hidden sm:inline font-medium">
-            {supabaseOnline ? 'Supabase Live' : 'Offline / Local Sync'}
+            {supabaseOnline ? 'Supabase Live' : 'Offline / Local'}
           </span>
           <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-green-500' : 'bg-amber-400 animate-pulse'}`} />
         </button>
@@ -146,7 +166,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
 
                 {showNotifMenu && (
-                  <div className="absolute right-0 mt-2 w-84 bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50 text-xs">
+                  <div className="absolute right-0 mt-2 w-[min(22rem,calc(100vw-1.5rem))] bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50 text-xs">
                     <div className="flex items-center justify-between pb-2 border-b border-gray-100">
                       <span className="font-bold text-gray-900">Notifications & Alerts</span>
                       {staffNotifs.length > 0 && (
@@ -209,13 +229,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           })()}
         </div>
 
-        {/* Quick Role Switcher (Crucial for testing all 12 designations + DM + DC + Admin) */}
+        {/* Quick Role Switcher */}
         <div className="relative">
           <button
             onClick={() => setShowRoleMenu(!showRoleMenu)}
-            className="flex items-center space-x-2 text-left p-1.5 rounded-md hover:bg-gray-50 border border-transparent hover:border-gray-200 transition"
+            className="flex items-center space-x-1.5 sm:space-x-2 text-left p-1 rounded-md hover:bg-gray-50 border border-transparent hover:border-gray-200 transition cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-full bg-[#123C45] text-white flex items-center justify-center font-bold text-xs uppercase">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#123C45] text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
               {currentUser.fullName.charAt(0)}
             </div>
             <div className="hidden sm:block text-left">
@@ -230,7 +250,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {currentUser.employeeId}
                 </span>
                 <span className="text-[9px] text-gray-400">•</span>
-                <span className="text-[10px] text-gray-500 leading-none truncate max-w-[110px]">
+                <span className="text-[10px] text-gray-500 leading-none truncate max-w-[90px] sm:max-w-[110px]">
                   {currentUser.designationTitle}
                 </span>
               </div>
@@ -238,7 +258,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {showRoleMenu && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50">
+            <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50">
               <div className="pb-2 border-b border-gray-100">
                 <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
                   Signed in as

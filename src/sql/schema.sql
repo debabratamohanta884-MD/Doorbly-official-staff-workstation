@@ -595,42 +595,56 @@ CREATE POLICY attendance_insert_update_policy ON employee_attendance
     );
 
 -- =========================================================================
--- INITIAL SEED: ALL 30 DISTRICTS OF ODISHA (TOTAL TARGET: ₹1,00,000)
+-- INITIAL SEED: ALL 30 DISTRICTS OF ODISHA (TOTAL DAILY TARGET: ₹1,00,000)
+-- Real operational baseline: Zero fake completions, 0 bookings, 0 staff, NULL managers
 -- =========================================================================
 INSERT INTO districts (id, name, daily_target, actual_completed_subtotal, completed_bookings_count, active_staff_count, manager_name, coordinator_name, tier) VALUES
-('khordha', 'Khordha', 7000.00, 7350.00, 12, 8, 'Amit Pattanaik', 'Priya Das', 1),
-('cuttack', 'Cuttack', 6500.00, 6200.00, 11, 7, 'Subhashree Nayak', 'Rakesh Sahoo', 1),
-('ganjam', 'Ganjam', 5500.00, 5100.00, 9, 6, 'Bikash Mohapatra', 'Kunal Panda', 1),
-('puri', 'Puri', 5000.00, 5250.00, 8, 5, 'Sasmita Rout', 'Anil Mishra', 1),
-('sundargarh', 'Sundargarh', 5000.00, 4800.00, 7, 5, 'Rajesh Kujur', 'Manoj Ekka', 1),
-('balasore', 'Balasore', 4000.00, 4100.00, 6, 4, 'Debabrata Barik', 'Suman Behera', 2),
-('sambalpur', 'Sambalpur', 4000.00, 3950.00, 6, 4, 'Swagatika Pradhan', 'Ashok Bag', 2),
-('mayurbhanj', 'Mayurbhanj', 4000.00, 3800.00, 5, 4, 'Jitendra Marandi', 'Deepak Tudu', 2),
-('jajpur', 'Jajpur', 4000.00, 4050.00, 6, 4, 'Manas Parida', 'Alok Jena', 2),
-('bhadrak', 'Bhadrak', 3500.00, 3400.00, 5, 3, 'Ranjit Biswal', 'Gourav Kar', 2),
-('kendrapara', 'Kendrapara', 3500.00, 3600.00, 5, 3, 'Santosh Swain', 'Bibhu Dhal', 2),
-('jagatsinghpur', 'Jagatsinghpur', 3000.00, 2900.00, 4, 3, 'Lopamudra Das', 'Soumya Ray', 2),
-('angul', 'Angul', 3500.00, 3300.00, 5, 3, 'Prabhat Dehury', 'Tapas Sahu', 2),
-('dhenkanal', 'Dhenkanal', 3000.00, 2800.00, 4, 3, 'Niranjan Rout', 'Bikram Bhanja', 2),
-('keonjhar', 'Keonjhar', 3000.00, 3100.00, 4, 3, 'Chitta Mahanta', 'Sanjay Giri', 2),
-('bargarh', 'Bargarh', 3000.00, 2950.00, 4, 3, 'Hemant Meher', 'Prakash Sahu', 2),
-('balangir', 'Balangir', 3000.00, 2700.00, 4, 3, 'Biswajit Nag', 'Dillip Joshi', 2),
-('kalahandi', 'Kalahandi', 3000.00, 2850.00, 4, 3, 'Sudhanshu Majhi', 'Ramesh Naik', 2),
-('koraput', 'Koraput', 3000.00, 3050.00, 4, 3, 'Tarun Khosla', 'Hari Gouda', 2),
-('rayagada', 'Rayagada', 3000.00, 2750.00, 3, 3, 'Srinivas Rao', 'Murali Pidika', 2),
-('nayagarh', 'Nayagarh', 2500.00, 2400.00, 3, 2, 'Pradeep Tripathy', 'Satya Sundar', 3),
-('gajapati', 'Gajapati', 2000.00, 1950.00, 3, 2, 'Kishore Gamang', 'Surya Gamango', 3),
-('kandhamal', 'Kandhamal', 2000.00, 1800.00, 2, 2, 'Sunil Mallick', 'Judhistir Pradhan', 3),
-('nuapada', 'Nuapada', 2000.00, 1900.00, 2, 2, 'Dharmendra Dandsena', 'Bhagaban Sahu', 3),
-('subarnapur', 'Subarnapur', 2000.00, 1850.00, 2, 2, 'Binod Purohit', 'Girish Barik', 3),
-('boudh', 'Boudh', 2000.00, 2050.00, 3, 2, 'Dipti Ranjan Kanhar', 'Abhimanyu Bag', 3),
-('deogarh', 'Deogarh', 2000.00, 1750.00, 2, 2, 'Saroj Pradhan', 'Umesh Debata', 3),
-('malkangiri', 'Malkangiri', 2000.00, 1700.00, 2, 2, 'Naveen Madhi', 'Kishore Khemundu', 3),
-('nabarangpur', 'Nabarangpur', 2000.00, 1950.00, 2, 2, 'Trilochan Bhatra', 'Govind Santa', 3),
-('jharsuguda', 'Jharsuguda', 2000.00, 2200.00, 3, 3, 'Gopal Agrawal', 'Vinod Sharma', 3)
+('khordha', 'Khordha', 7000.00, 0.00, 0, 0, NULL, NULL, 1),
+('cuttack', 'Cuttack', 6500.00, 0.00, 0, 0, NULL, NULL, 1),
+('ganjam', 'Ganjam', 5500.00, 0.00, 0, 0, NULL, NULL, 1),
+('puri', 'Puri', 5000.00, 0.00, 0, 0, NULL, NULL, 1),
+('sundargarh', 'Sundargarh', 5000.00, 0.00, 0, 0, NULL, NULL, 1),
+('balasore', 'Balasore', 4000.00, 0.00, 0, 0, NULL, NULL, 2),
+('sambalpur', 'Sambalpur', 4000.00, 0.00, 0, 0, NULL, NULL, 2),
+('mayurbhanj', 'Mayurbhanj', 4000.00, 0.00, 0, 0, NULL, NULL, 2),
+('jajpur', 'Jajpur', 4000.00, 0.00, 0, 0, NULL, NULL, 2),
+('bhadrak', 'Bhadrak', 3500.00, 0.00, 0, 0, NULL, NULL, 2),
+('kendrapara', 'Kendrapara', 3500.00, 0.00, 0, 0, NULL, NULL, 2),
+('jagatsinghpur', 'Jagatsinghpur', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('angul', 'Angul', 3500.00, 0.00, 0, 0, NULL, NULL, 2),
+('dhenkanal', 'Dhenkanal', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('keonjhar', 'Keonjhar', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('bargarh', 'Bargarh', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('balangir', 'Balangir', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('kalahandi', 'Kalahandi', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('koraput', 'Koraput', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('rayagada', 'Rayagada', 3000.00, 0.00, 0, 0, NULL, NULL, 2),
+('nayagarh', 'Nayagarh', 2500.00, 0.00, 0, 0, NULL, NULL, 3),
+('gajapati', 'Gajapati', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('kandhamal', 'Kandhamal', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('nuapada', 'Nuapada', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('subarnapur', 'Subarnapur', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('boudh', 'Boudh', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('deogarh', 'Deogarh', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('malkangiri', 'Malkangiri', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('nabarangpur', 'Nabarangpur', 2000.00, 0.00, 0, 0, NULL, NULL, 3),
+('jharsuguda', 'Jharsuguda', 2000.00, 0.00, 0, 0, NULL, NULL, 3)
 ON CONFLICT (id) DO UPDATE SET
     daily_target = EXCLUDED.daily_target,
-    actual_completed_subtotal = EXCLUDED.actual_completed_subtotal;
+    actual_completed_subtotal = EXCLUDED.actual_completed_subtotal,
+    completed_bookings_count = EXCLUDED.completed_bookings_count,
+    active_staff_count = EXCLUDED.active_staff_count,
+    manager_name = EXCLUDED.manager_name,
+    coordinator_name = EXCLUDED.coordinator_name,
+    tier = EXCLUDED.tier;
+
+-- Explicitly reset any existing mock numbers/names in previously seeded districts table
+UPDATE districts
+SET actual_completed_subtotal = 0.00,
+    completed_bookings_count = 0,
+    active_staff_count = 0,
+    manager_name = NULL,
+    coordinator_name = NULL;
 
 -- =========================================================================
 -- INITIAL SEED: DEPARTMENTS
@@ -671,3 +685,120 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO staff_profiles (id, employee_id, full_name, email, mobile, department_id, designation_id, system_role, district_id, status, permission_level) VALUES
 ('staff-admin-01', 'DBL-OD-001', 'Debabrata Mohanta', 'debabratamohanta884@gmail.com', '+91 94370 12345', 'dept_central_exec', 'dm', 'super_admin', 'khordha', 'active', 'admin')
 ON CONFLICT (id) DO NOTHING;
+
+-- =========================================================================
+-- WORKSTATION API PERMISSIONS & ROLE GRANTS (CRITICAL FOR SUPABASE ACCESS)
+-- Grants PostgreSQL table permissions to PostgREST roles (anon & authenticated)
+-- =========================================================================
+
+-- 1. Schema access
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+
+-- 2. Grant table access on all tables to anon and authenticated roles
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+-- 3. Ensure future tables also inherit full access
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+
+-- 4. Enable public read and write access on core catalog master tables
+ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS departments_access_policy ON departments;
+CREATE POLICY departments_access_policy ON departments FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE districts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS districts_access_policy ON districts;
+CREATE POLICY districts_access_policy ON districts FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE job_designations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS job_designations_access_policy ON job_designations;
+CREATE POLICY job_designations_access_policy ON job_designations FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE task_value_master ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS task_value_master_access_policy ON task_value_master;
+CREATE POLICY task_value_master_access_policy ON task_value_master FOR ALL TO public USING (true) WITH CHECK (true);
+
+-- 5. Enable workstation access policies on all operational tables
+ALTER TABLE staff_profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS staff_profiles_access ON staff_profiles;
+CREATE POLICY staff_profiles_access ON staff_profiles FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE daily_tasks ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS daily_tasks_access ON daily_tasks;
+CREATE POLICY daily_tasks_access ON daily_tasks FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE task_submissions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS task_submissions_access ON task_submissions;
+CREATE POLICY task_submissions_access ON task_submissions FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE employee_work_credits ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS employee_work_credits_access ON employee_work_credits;
+CREATE POLICY employee_work_credits_access ON employee_work_credits FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE employee_attendance ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS employee_attendance_access ON employee_attendance;
+CREATE POLICY employee_attendance_access ON employee_attendance FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE employee_leave ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS employee_leave_access ON employee_leave;
+CREATE POLICY employee_leave_access ON employee_leave FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS leads_access ON leads;
+CREATE POLICY leads_access ON leads FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE corporate_prospects ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS corporate_prospects_access ON corporate_prospects;
+CREATE POLICY corporate_prospects_access ON corporate_prospects FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE partner_applications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS partner_applications_access ON partner_applications;
+CREATE POLICY partner_applications_access ON partner_applications FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE booking_pipeline ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS booking_pipeline_access ON booking_pipeline;
+CREATE POLICY booking_pipeline_access ON booking_pipeline FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE complaint_tickets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS complaint_tickets_access ON complaint_tickets;
+CREATE POLICY complaint_tickets_access ON complaint_tickets FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE system_announcements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS system_announcements_access ON system_announcements;
+CREATE POLICY system_announcements_access ON system_announcements FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE system_audit_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS system_audit_logs_access ON system_audit_logs;
+CREATE POLICY system_audit_logs_access ON system_audit_logs FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE department_daily_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS department_daily_reports_access ON department_daily_reports;
+CREATE POLICY department_daily_reports_access ON department_daily_reports FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE job_candidates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS job_candidates_access ON job_candidates;
+CREATE POLICY job_candidates_access ON job_candidates FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE financial_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS financial_transactions_access ON financial_transactions;
+CREATE POLICY financial_transactions_access ON financial_transactions FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE staff_wallets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS staff_wallets_access ON staff_wallets;
+CREATE POLICY staff_wallets_access ON staff_wallets FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE staff_wallet_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS staff_wallet_transactions_access ON staff_wallet_transactions;
+CREATE POLICY staff_wallet_transactions_access ON staff_wallet_transactions FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE staff_work_assignments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS staff_work_assignments_access ON staff_work_assignments;
+CREATE POLICY staff_work_assignments_access ON staff_work_assignments FOR ALL TO public USING (true) WITH CHECK (true);
+
+ALTER TABLE staff_notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS staff_notifications_access ON staff_notifications;
+CREATE POLICY staff_notifications_access ON staff_notifications FOR ALL TO public USING (true) WITH CHECK (true);
+

@@ -734,13 +734,28 @@ export async function testSupabaseConnection(): Promise<{
         };
       }
 
-      // Case 2: Authentication failure (401 / Invalid API Key / JWT)
+      // Case 2: Permission Denied on Table (PostgreSQL 42501 / Missing GRANT or RLS Policy)
+      // Note: PostgREST returns 401 when the anon role lacks table permissions.
       if (
-        status === 401 ||
+        errCode === '42501' ||
+        errMsg.toLowerCase().includes('permission denied') ||
+        errDetails.toLowerCase().includes('permission denied')
+      ) {
+        return {
+          success: false,
+          latencyMs: latency,
+          message: `Connected (${latency}ms), but permission denied for table "departments". Please run the Grant Permissions SQL script in your Supabase SQL Editor.`,
+          details: `PostgreSQL error: ${errMsg}. The "anon" role lacks table permissions.`
+        };
+      }
+
+      // Case 3: Genuine Authentication failure (Invalid API Key / JWT)
+      if (
         errCode === 'PGRST301' ||
         errMsg.toLowerCase().includes('invalid api key') ||
         errMsg.toLowerCase().includes('no api key') ||
-        errMsg.toLowerCase().includes('jwt')
+        errMsg.toLowerCase().includes('jwt') ||
+        (status === 401 && !errMsg.toLowerCase().includes('permission denied'))
       ) {
         return {
           success: false,
@@ -749,7 +764,7 @@ export async function testSupabaseConnection(): Promise<{
         };
       }
 
-      // Case 3: Paused Project (503 Service Unavailable)
+      // Case 4: Paused Project (503 Service Unavailable)
       if (
         status === 503 ||
         errMsg.toLowerCase().includes('paused') ||
@@ -759,19 +774,6 @@ export async function testSupabaseConnection(): Promise<{
           success: false,
           latencyMs: latency,
           message: `Supabase Project Paused (HTTP 503): This project is paused due to inactivity on the free tier. Unpause it in your Supabase Dashboard.`
-        };
-      }
-
-      // Case 4: Row Level Security restriction (42501 / 403)
-      if (
-        errCode === '42501' ||
-        status === 403 ||
-        errMsg.toLowerCase().includes('permission denied')
-      ) {
-        return {
-          success: true,
-          latencyMs: latency,
-          message: `Connected successfully (${latency}ms)! Tables are present (RLS policies are actively protecting rows).`
         };
       }
 
