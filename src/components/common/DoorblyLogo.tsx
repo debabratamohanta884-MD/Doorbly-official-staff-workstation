@@ -28,7 +28,7 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  // Dimension presets with tailored orbit ring and sharp pinpoint green laser light
+  // Dimension presets with tailored orbit ring, enlarged typography, and sharp pinpoint green laser light
   const sizeMap = {
     xs: {
       img: 'w-6 h-6',
@@ -39,28 +39,28 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
     },
     sm: {
       img: 'w-8 h-8',
-      text: 'text-base',
+      text: 'text-lg',
       badge: 'text-[10px] px-1.5',
       orbitInset: '-inset-1',
       pinpointSize: 'w-[4px] h-[4px]'
     },
     md: {
       img: 'w-10 h-10',
-      text: 'text-lg',
+      text: 'text-xl',
       badge: 'text-[10px] px-1.5',
       orbitInset: '-inset-1.5',
       pinpointSize: 'w-[5px] h-[5px]'
     },
     lg: {
       img: 'w-14 h-14',
-      text: 'text-xl',
+      text: 'text-2xl',
       badge: 'text-[11px] px-2',
       orbitInset: '-inset-2',
       pinpointSize: 'w-[6px] h-[6px]'
     },
     xl: {
       img: 'w-20 h-20',
-      text: 'text-2xl',
+      text: 'text-3xl',
       badge: 'text-xs px-2.5',
       orbitInset: '-inset-2.5',
       pinpointSize: 'w-[7px] h-[7px]'
@@ -114,17 +114,16 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
         <div className="leading-tight">
           <div className="flex items-center space-x-1.5">
             <span
-              className={`font-black tracking-tight ${
-                textVariant === 'light' ? 'text-white' : 'text-[#123C45]'
-              } ${currentSize.text}`}
+              className={`font-black tracking-tight ${currentSize.text} lowercase inline-flex items-center`}
             >
-              DOORBLY
+              <span className={textVariant === 'light' ? 'text-white' : 'text-gray-900'}>door</span>
+              <span className="text-[#FACC15]">bly</span>
             </span>
             {badgeText && (
               <span
                 className={`font-bold uppercase tracking-wider rounded ${currentSize.badge} ${
                   textVariant === 'light'
-                    ? 'bg-teal-400/20 text-teal-200 border border-teal-400/30'
+                    ? 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/35'
                     : 'bg-[#0F766E]/10 text-[#0F766E]'
                 }`}
               >
@@ -137,7 +136,7 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
               className={`text-[11px] truncate ${
                 hideSubtitleOnMobile ? 'hidden sm:block' : ''
               } ${
-                textVariant === 'light' ? 'text-teal-200/80' : 'text-gray-500'
+                textVariant === 'light' ? 'text-teal-200/90' : 'text-gray-500'
               }`}
             >
               {subtitle}

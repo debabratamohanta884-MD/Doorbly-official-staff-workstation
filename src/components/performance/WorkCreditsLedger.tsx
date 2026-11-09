@@ -42,7 +42,7 @@ export const WorkCreditsLedger: React.FC<WorkCreditsLedgerProps> = ({ currentUse
         <div>
           <p className="font-bold text-amber-900">Important Internal Measurement Notice (Section 10 Compliance)</p>
           <p className="mt-0.5 text-amber-700 leading-relaxed text-[11px]">
-            These credits represent internal productivity measurement units for remote performance assessment. They are not an employee salary, statutory wages, wallet balance, or automatic monetary compensation. Statutory salary is remitted separately by Doorbly HR Administration.
+            These credits represent internal productivity measurement units for remote performance assessment. They are not an employee salary, statutory wages, wallet balance, or automatic monetary compensation. Statutory salary is remitted separately by doorbly HR Administration.
           </p>
         </div>
       </div>

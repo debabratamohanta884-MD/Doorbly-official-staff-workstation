@@ -242,7 +242,7 @@ export const DistrictManagerDashboard: React.FC<DistrictManagerDashboardProps> =
 
                     <div className="text-right shrink-0 ml-3">
                       <p className="font-bold text-gray-900 text-xs">₹{b.serviceSubtotal}</p>
-                      <p className="text-[10px] text-teal-700 font-medium">Doorbly: ₹{b.doorblyCommission} (20%)</p>
+                      <p className="text-[10px] text-teal-700 font-medium">doorbly: ₹{b.doorblyCommission} (20%)</p>
                       <p className="text-[10px] text-gray-400">Payout: ₹{b.partnerPayout}</p>
                     </div>
                   </div>

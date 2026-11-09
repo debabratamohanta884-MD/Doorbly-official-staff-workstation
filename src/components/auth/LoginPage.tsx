@@ -52,19 +52,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
   return (
     <div className="min-h-screen bg-[#F7F9FA] flex flex-col justify-between">
       {/* Top Bar */}
-      <header className="bg-white border-b border-gray-200 px-6 py-3.5 flex items-center justify-between">
+      <header className="bg-[#0B3B32] border-b border-teal-950/80 px-6 py-3.5 flex items-center justify-between shadow-sm text-white">
         <DoorblyLogo
           size="md"
           showText={true}
+          textVariant="light"
           badgeText="Remote Workstation"
           subtitle="workstation.doorbly.com • Odisha Remote Operations"
         />
 
         <button
           onClick={onOpenBackendModal}
-          className="flex items-center space-x-1.5 text-xs text-gray-600 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-md bg-white hover:bg-gray-50 transition"
+          className="flex items-center space-x-1.5 text-xs text-white hover:text-white border border-white/20 px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 transition cursor-pointer"
         >
-          <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-green-500' : 'bg-amber-400'}`} />
+          <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
           <span className="hidden sm:inline">Backend Setup</span>
         </button>
       </header>
@@ -124,7 +125,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900">Workstation Login</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Enter your official Doorbly Employee ID and password to access your workspace.
+                  Enter your official doorbly Employee ID and password to access your workspace.
                 </p>
               </div>
 
@@ -211,7 +212,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
                     <span>Authenticating...</span>
                   ) : (
                     <>
-                      <span>Enter Doorbly Workstation</span>
+                      <span>Enter doorbly Workstation</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -253,7 +254,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
 
       {/* Footer */}
       <footer className="text-center py-4 text-xs text-gray-400 border-t border-gray-200 bg-white">
-        © {new Date().getFullYear()} Doorbly Technologies Private Limited. All Rights Reserved. Remote Workstation Portal • Asia/Kolkata IST
+        © {new Date().getFullYear()} doorbly Technologies Private Limited. All Rights Reserved. Remote Workstation Portal • Asia/Kolkata IST
       </footer>
     </div>
   );

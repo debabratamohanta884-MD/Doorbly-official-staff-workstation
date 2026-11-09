@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="https://vteiyljzrqvlfujipdlf.supabase.co/storage/v1/object/sign/Official%20logo/Glossy%20Teal%20Connected%20Loop%20Emblem.png?token=eyJraWQiOiJlMDEyYTY3MS1jMGQwLTQzZjQtYmQ3MC01YjFhYmY2ZjYxZjAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJPZmZpY2lhbCBsb2dvL0dsb3NzeSBUZWFsIENvbm5lY3RlZCBMb29wIEVtYmxlbS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzExNTkxLCJleHAiOjE4MjUyNDc1OTF9.zXMv_0GGSmo36fKcOXwvqHcPGXXvFnTS01BOdcAAgUA6nH8In0HaoVx5NYuYrnpH0ZHnsU16qB_IYVhfqQvlkA" alt="Doorbly Official Logo" width="100" height="100" style="border-radius: 20px;" />
+<img src="https://nnrreqvakdhlveqfmdgq.supabase.co/storage/v1/object/sign/Official%20Logo/Glossy%20Teal%20Connected%20Loop%20Emblem.png?token=eyJraWQiOiJlNzM5YmU1Yi1kMzkwLTQ3ZWItODg1YS0xODc1Y2MxODAzZGIiLCJhbGciOiJFUzI1NiJ9.eyJ1cmwiOiJPZmZpY2lhbCBMb2dvL0dsb3NzeSBUZWFsIENvbm5lY3RlZCBMb29wIEVtYmxlbS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzk0MjQwOTM4LCJleHAiOjE4MjU3NzY5Mzh9.aIgnGLkB_-yf0eV8hNxnVFEFGVBXLJjI4l9W_j9GNQTzqMF-qx_Kw9xEwModtE_1IMnCYZbzWPd8_Jw_DBmrlw" alt="doorbly Official Logo" width="100" height="100" style="border-radius: 20px;" />
 
-# DOORBLY Workstation
+# doorbly Workstation
 ### Remote Employee Workstation & Operations Management System
 **Enterprise Multi-District Operations Platform across 30 Districts of Odisha, India**
 
@@ -19,7 +19,7 @@
 
 ## 📋 Overview
 
-**DOORBLY Remote Employee Workstation** is a full-featured, enterprise-grade operations platform engineered for distributed field staff, district managers, district coordinators, and central executive administration across all **30 districts of Odisha**.
+**doorbly Remote Employee Workstation** is a full-featured, enterprise-grade operations platform engineered for distributed field staff, district managers, district coordinators, and central executive administration across all **30 districts of Odisha**.
 
 The platform orchestrates daily task assignments, work submission verification, productivity credit calculation, staff wallet balances, withdrawal disbursements, customer service bookings, partner onboarding, and multi-district revenue pipelines in real-time.
 
@@ -27,7 +27,7 @@ The platform orchestrates daily task assignments, work submission verification, 
 
 ## ✨ Key Capabilities
 
-- **🌀 Dynamic Brand Emblem**: Official Doorbly emblem with continuous 3D perspective flip (`rotateY`) and an orbiting emerald light beacon.
+- **🌀 Dynamic Brand Emblem**: Official doorbly emblem with continuous 3D perspective flip (`rotateY`) and an orbiting emerald light beacon.
 - **🏛️ 30 Districts of Odisha**: Fully mapped districts from Khordha (Bhubaneswar HQ) and Cuttack to Mayurbhanj, Sundargarh, and Ganjam with real-time quota tracking.
 - **🔐 Multi-Tier Role-Based Access (RBAC)**:
   - `super_admin`: Full statewide executive governance, financial approvals, SQL console, and system audit logs.
@@ -185,5 +185,5 @@ CMD ["nginx", "-g", "daemon off;"]
 ---
 
 ## 📄 License
-Copyright © 2024–2026 **DOORBLY Technologies Private Limited**. All rights reserved.  
-Confidential & Proprietary for authorized Doorbly personnel and partners.
+Copyright © 2024–2026 **doorbly Technologies Private Limited**. All rights reserved.  
+Confidential & Proprietary for authorized doorbly personnel and partners.

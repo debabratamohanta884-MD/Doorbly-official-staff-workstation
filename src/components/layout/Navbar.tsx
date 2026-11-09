@@ -88,24 +88,25 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FFFFFF] border-b border-gray-200 px-3 sm:px-4 lg:px-6 py-2 flex items-center justify-between shadow-xs">
+    <header className="sticky top-0 z-40 bg-[#0B3B32] border-b border-teal-950/80 px-3 sm:px-4 lg:px-6 py-2 flex items-center justify-between shadow-md text-white">
       {/* Brand & Mobile Hamburger */}
       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
         {/* Mobile Sidebar Hamburger Toggle */}
         <button
           type="button"
           onClick={onToggleMobileSidebar}
-          className="lg:hidden p-1.5 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer shrink-0 border border-gray-200"
+          className="lg:hidden p-1.5 rounded-md text-teal-100 hover:text-white hover:bg-white/10 transition cursor-pointer shrink-0 border border-white/20"
           aria-label={isMobileSidebarOpen ? 'Close menu' : 'Open menu'}
           title="Toggle Navigation Menu"
         >
-          {isMobileSidebarOpen ? <X className="w-5 h-5 text-gray-800" /> : <Menu className="w-5 h-5 text-gray-800" />}
+          {isMobileSidebarOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
         </button>
 
         <div className="min-w-0">
           <DoorblyLogo
-            size="sm"
+            size="md"
             showText={true}
+            textVariant="light"
             badgeText="Workstation"
             subtitle="Odisha Remote Operations"
             animateFlip={true}
@@ -115,19 +116,19 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Assigned District Badge */}
-        <div className="hidden md:flex items-center space-x-1.5 bg-[#F7F9FA] border border-gray-200 text-gray-700 px-2.5 py-1 rounded-md text-xs font-medium shrink-0">
-          <MapPin className="w-3.5 h-3.5 text-[#0F766E]" />
+        <div className="hidden md:flex items-center space-x-1.5 bg-black/30 border border-white/15 text-teal-100 px-2.5 py-1 rounded-md text-xs font-medium shrink-0">
+          <MapPin className="w-3.5 h-3.5 text-yellow-400" />
           <span>{currentUser.districtName}</span>
         </div>
       </div>
 
       {/* Center: Live IST Clock */}
-      <div className="hidden lg:flex items-center space-x-2 bg-[#F7F9FA] border border-gray-200 px-3 py-1 rounded-md text-xs shrink-0">
-        <Clock className="w-3.5 h-3.5 text-[#0F766E]" />
-        <span className="text-gray-500 font-normal">{istDate}</span>
-        <span className="text-gray-300">|</span>
-        <span className="font-semibold text-gray-800 tabular-nums">{istTime}</span>
-        <span className="text-[10px] font-bold text-[#0F766E] bg-teal-50 px-1 rounded">IST</span>
+      <div className="hidden lg:flex items-center space-x-2 bg-black/30 border border-white/15 px-3 py-1 rounded-md text-xs shrink-0 text-teal-100">
+        <Clock className="w-3.5 h-3.5 text-yellow-400" />
+        <span className="text-teal-200/80 font-normal">{istDate}</span>
+        <span className="text-white/20">|</span>
+        <span className="font-semibold text-white tabular-nums">{istTime}</span>
+        <span className="text-[10px] font-bold text-yellow-300 bg-yellow-950/70 border border-yellow-500/40 px-1 rounded">IST</span>
       </div>
 
       {/* Right Actions */}
@@ -136,13 +137,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={onOpenBackendModal}
           title="Supabase & Database Connectivity"
-          className="flex items-center space-x-1 text-xs px-2 sm:px-2.5 py-1 rounded-md border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition cursor-pointer"
+          className="flex items-center space-x-1 text-xs px-2 sm:px-2.5 py-1 rounded-md border border-white/20 bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
         >
-          <Database className={`w-3.5 h-3.5 ${supabaseOnline ? 'text-green-600' : 'text-amber-500'}`} />
-          <span className="hidden sm:inline font-medium">
+          <Database className={`w-3.5 h-3.5 ${supabaseOnline ? 'text-emerald-400' : 'text-amber-400'}`} />
+          <span className="hidden sm:inline font-medium text-white">
             {supabaseOnline ? 'Supabase Live' : 'Offline / Local'}
           </span>
-          <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-green-500' : 'bg-amber-400 animate-pulse'}`} />
+          <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
         </button>
 
         {/* Notifications Dropdown */}
@@ -156,12 +157,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               <>
                 <button
                   onClick={() => setShowNotifMenu(!showNotifMenu)}
-                  className="p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition relative cursor-pointer"
+                  className="p-1.5 rounded-md text-teal-100 hover:text-white hover:bg-white/10 transition relative cursor-pointer"
                   title="System Announcements & Wallet Notifications"
                 >
                   <Bell className="w-5 h-5" />
                   {hasActivity && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full" />
                   )}
                 </button>
 
@@ -233,24 +234,24 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowRoleMenu(!showRoleMenu)}
-            className="flex items-center space-x-1.5 sm:space-x-2 text-left p-1 rounded-md hover:bg-gray-50 border border-transparent hover:border-gray-200 transition cursor-pointer"
+            className="flex items-center space-x-1.5 sm:space-x-2 text-left p-1 rounded-md hover:bg-white/10 border border-transparent hover:border-white/15 transition cursor-pointer text-white"
           >
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#123C45] text-white flex items-center justify-center font-bold text-xs uppercase shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/15 text-yellow-300 border border-white/25 flex items-center justify-center font-bold text-xs uppercase shrink-0">
               {currentUser.fullName.charAt(0)}
             </div>
             <div className="hidden sm:block text-left">
               <div className="flex items-center space-x-1">
-                <span className="font-semibold text-xs text-gray-900 leading-none">
+                <span className="font-semibold text-xs text-white leading-none">
                   {currentUser.fullName}
                 </span>
-                <ChevronDown className="w-3 h-3 text-gray-400" />
+                <ChevronDown className="w-3 h-3 text-teal-200" />
               </div>
               <div className="flex items-center space-x-1 mt-0.5">
-                <span className="text-[10px] text-[#0F766E] font-medium leading-none">
+                <span className="text-[10px] text-yellow-300 font-medium leading-none">
                   {currentUser.employeeId}
                 </span>
-                <span className="text-[9px] text-gray-400">•</span>
-                <span className="text-[10px] text-gray-500 leading-none truncate max-w-[90px] sm:max-w-[110px]">
+                <span className="text-[9px] text-white/40">•</span>
+                <span className="text-[10px] text-teal-200/90 leading-none truncate max-w-[90px] sm:max-w-[110px]">
                   {currentUser.designationTitle}
                 </span>
               </div>

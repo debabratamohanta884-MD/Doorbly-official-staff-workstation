@@ -4,10 +4,10 @@
  */
 
 export const DOORBLY_OFFICIAL_LOGO_URL =
-  'https://vteiyljzrqvlfujipdlf.supabase.co/storage/v1/object/sign/Official%20logo/Glossy%20Teal%20Connected%20Loop%20Emblem.png?token=eyJraWQiOiJlMDEyYTY3MS1jMGQwLTQzZjQtYmQ3MC01YjFhYmY2ZjYxZjAiLCJhbGciOiJIUzUxMiJ9.eyJ1cmwiOiJPZmZpY2lhbCBsb2dvL0dsb3NzeSBUZWFsIENvbm5lY3RlZCBMb29wIEVtYmxlbS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzkzNzExNTkxLCJleHAiOjE4MjUyNDc1OTF9.zXMv_0GGSmo36fKcOXwvqHcPGXXvFnTS01BOdcAAgUA6nH8In0HaoVx5NYuYrnpH0ZHnsU16qB_IYVhfqQvlkA';
+  'https://nnrreqvakdhlveqfmdgq.supabase.co/storage/v1/object/sign/Official%20Logo/Glossy%20Teal%20Connected%20Loop%20Emblem.png?token=eyJraWQiOiJlNzM5YmU1Yi1kMzkwLTQ3ZWItODg1YS0xODc1Y2MxODAzZGIiLCJhbGciOiJFUzI1NiJ9.eyJ1cmwiOiJPZmZpY2lhbCBMb2dvL0dsb3NzeSBUZWFsIENvbm5lY3RlZCBMb29wIEVtYmxlbS5wbmciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzk0MjQwOTM4LCJleHAiOjE4MjU3NzY5Mzh9.aIgnGLkB_-yf0eV8hNxnVFEFGVBXLJjI4l9W_j9GNQTzqMF-qx_Kw9xEwModtE_1IMnCYZbzWPd8_Jw_DBmrlw';
 
 export const DOORBLY_BRAND = {
-  name: 'DOORBLY',
+  name: 'doorbly',
   tagline: 'Remote Employee Workstation & Management System',
   region: '30 Districts of Odisha, India',
   primaryColor: '#0F766E',

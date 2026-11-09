@@ -18,7 +18,7 @@ export function getEffectiveSupabaseUrl(): string {
   }
   const envUrl = import.meta.env.VITE_SUPABASE_URL;
   if (envUrl && envUrl.trim().startsWith('https://')) return envUrl.trim().replace(/\/+$/, '');
-  return 'https://vteiyljzrqvlfujipdlf.supabase.co';
+  return 'https://nnrreqvakdhlveqfmdgq.supabase.co';
 }
 
 export function getEffectiveSupabaseAnonKey(): string {

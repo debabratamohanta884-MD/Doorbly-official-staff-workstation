@@ -82,7 +82,7 @@ export const DistrictRevenueView: React.FC<DistrictRevenueViewProps> = ({ curren
             Daily Statewide Target: ₹{totalStatewideTarget.toLocaleString('en-IN')}
           </h1>
           <p className="text-xs text-teal-100/80 mt-0.5">
-            Completed service value before applicable taxes. 20% Doorbly markup model tracked across district clusters.
+            Completed service value before applicable taxes. 20% doorbly markup model tracked across district clusters.
           </p>
         </div>
 

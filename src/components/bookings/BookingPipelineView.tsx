@@ -108,13 +108,13 @@ export const BookingPipelineView: React.FC<BookingPipelineViewProps> = ({ curren
               Financial Operations
             </span>
             <span className="text-xs text-gray-400">•</span>
-            <span className="text-xs text-gray-500">20% Doorbly Markup Pricing Model</span>
+            <span className="text-xs text-gray-500">20% doorbly Markup Pricing Model</span>
           </div>
           <h1 className="text-xl font-bold text-gray-900 mt-1">
             Customer Bookings & Revenue Reconciliation
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Transparent split between service subtotal, 18% GST, 20% Doorbly platform commission, and partner payout.
+            Transparent split between service subtotal, 18% GST, 20% doorbly platform commission, and partner payout.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export const BookingPipelineView: React.FC<BookingPipelineViewProps> = ({ curren
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
-          <span className="text-xs font-medium text-gray-500">Doorbly 20% Commission</span>
+          <span className="text-xs font-medium text-gray-500">doorbly 20% Commission</span>
           <p className="text-2xl font-bold text-[#0F766E] mt-2">₹{totalDoorblyCommission.toLocaleString('en-IN')}</p>
           <p className="text-[11px] text-gray-400 mt-1">Actual company net margin</p>
         </div>
@@ -196,7 +196,7 @@ export const BookingPipelineView: React.FC<BookingPipelineViewProps> = ({ curren
                 <th className="px-4 py-3">Service Deliverable</th>
                 <th className="px-4 py-3 text-right">Subtotal</th>
                 <th className="px-4 py-3 text-right">Customer Total (incl. GST)</th>
-                <th className="px-4 py-3 text-right">Doorbly 20%</th>
+                <th className="px-4 py-3 text-right">doorbly 20%</th>
                 <th className="px-4 py-3 text-right">Partner 80%</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Action</th>
@@ -353,7 +353,7 @@ export const BookingPipelineView: React.FC<BookingPipelineViewProps> = ({ curren
                   <span className="font-bold text-gray-900">₹{subtotal + Math.round(subtotal * 0.18)}</span>
                 </div>
                 <div className="flex justify-between text-teal-700">
-                  <span>Doorbly 20% Markup Commission:</span>
+                  <span>doorbly 20% Markup Commission:</span>
                   <span className="font-bold">₹{Math.round(subtotal * 0.20)}</span>
                 </div>
                 <div className="flex justify-between text-blue-700">

@@ -175,7 +175,7 @@ export const MyPerformanceView: React.FC<MyPerformanceViewProps> = ({ currentUse
       {/* Official Rating Criteria Guide */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
         <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide pb-3 border-b border-gray-100">
-          Official Doorbly Performance Classification Standards (Section 19)
+          Official doorbly Performance Classification Standards (Section 19)
         </h3>
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
