@@ -688,7 +688,7 @@ ON CONFLICT (id) DO NOTHING;
 -- INITIAL SEED: INITIAL ADMIN STAFF PROFILE
 -- =========================================================================
 INSERT INTO staff_profiles (id, employee_id, full_name, email, mobile, department_id, designation_id, system_role, district_id, status, permission_level) VALUES
-('staff-admin-01', 'DBL-OD-001', 'Debabrata Mohanta', 'debabratamohanta884@gmail.com', '+91 94370 12345', 'dept_central_exec', 'dm', 'super_admin', 'khordha', 'active', 'admin')
+('staff-admin-01', 'DBL-OD-001', 'Debabrata Mohanta', 'debabrata.tribune@gmail.com', '+91 94370 12345', 'dept_central_exec', 'dm', 'super_admin', 'khordha', 'active', 'admin')
 ON CONFLICT (id) DO NOTHING;
 
 -- =========================================================================

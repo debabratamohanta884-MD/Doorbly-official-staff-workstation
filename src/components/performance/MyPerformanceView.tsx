@@ -48,10 +48,11 @@ export const MyPerformanceView: React.FC<MyPerformanceViewProps> = ({ currentUse
   // Performance Score calculation: Approved Credits ÷ Assigned Credits × 100
   const scoreRaw = totalAssignedCredits > 0
     ? Math.round((totalApprovedCredits / totalAssignedCredits) * 100)
-    : 100;
+    : 0;
   const performanceScore = Math.min(100, scoreRaw);
 
-  const getScoreClassification = (score: number) => {
+  const getScoreClassification = (score: number, hasAssigned: boolean) => {
+    if (!hasAssigned) return { label: 'Baseline', color: 'bg-gray-50 text-gray-600 border-gray-200', text: 'No tasks assigned yet.' };
     if (score >= 90) return { label: 'Excellent', color: 'bg-emerald-50 text-emerald-700 border-emerald-200', text: 'Top tier productivity consistency.' };
     if (score >= 75) return { label: 'Good', color: 'bg-teal-50 text-teal-700 border-teal-200', text: 'Solid delivery meeting all primary deliverables.' };
     if (score >= 60) return { label: 'Needs Improvement', color: 'bg-amber-50 text-amber-700 border-amber-200', text: 'Moderate task conversion rate, attention required.' };
@@ -59,18 +60,31 @@ export const MyPerformanceView: React.FC<MyPerformanceViewProps> = ({ currentUse
     return { label: 'Critical', color: 'bg-red-50 text-red-700 border-red-200', text: 'Urgent performance escalation with District Coordinator.' };
   };
 
-  const classification = getScoreClassification(performanceScore);
+  const classification = getScoreClassification(performanceScore, totalAssignedCredits > 0);
 
-  // Weekly Trend Chart Data
-  const weeklyData = [
-    { day: 'Mon', assignedCredits: 220, approvedCredits: 200 },
-    { day: 'Tue', assignedCredits: 240, approvedCredits: 230 },
-    { day: 'Wed', assignedCredits: 210, approvedCredits: 190 },
-    { day: 'Thu', assignedCredits: 250, approvedCredits: 240 },
-    { day: 'Fri', assignedCredits: 230, approvedCredits: 210 },
-    { day: 'Sat', assignedCredits: 180, approvedCredits: 180 },
-    { day: 'Sun', assignedCredits: 120, approvedCredits: 120 }
-  ];
+  // Live 7-Day Trend Data computed strictly from real tasks and approved credits
+  const weeklyData = Array.from({ length: 7 }, (_, idx) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - idx));
+    const dateKey = d.toISOString().slice(0, 10);
+    const dayLabel = d.toLocaleDateString('en-IN', { weekday: 'short' });
+
+    const dayAssigned = tasks
+      .filter(t => (t.assignedDate || t.createdAt.slice(0, 10)) === dateKey)
+      .reduce((sum, t) => sum + (t.taskValueCredit || 0), 0);
+
+    const dayApproved = credits
+      .filter(c => c.date === dateKey)
+      .reduce((sum, c) => sum + (c.totalCredits || 0), 0);
+
+    return {
+      day: dayLabel,
+      assignedCredits: dayAssigned,
+      approvedCredits: dayApproved
+    };
+  });
+
+  const hasWeeklyActivity = weeklyData.some(d => d.assignedCredits > 0 || d.approvedCredits > 0);
 
   return (
     <div className="space-y-6">
@@ -124,7 +138,7 @@ export const MyPerformanceView: React.FC<MyPerformanceViewProps> = ({ currentUse
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
           <span className="text-xs font-medium text-gray-500">Task Completion Rate</span>
           <p className="text-2xl font-bold text-blue-600 mt-2">
-            {assignedTasksCount > 0 ? Math.round((completedTasksCount / assignedTasksCount) * 100) : 100}%
+            {assignedTasksCount > 0 ? Math.round((completedTasksCount / assignedTasksCount) * 100) : 0}%
           </p>
           <p className="text-[11px] text-gray-400 mt-1">{completedTasksCount} / {assignedTasksCount} tasks submitted</p>
         </div>
@@ -151,24 +165,32 @@ export const MyPerformanceView: React.FC<MyPerformanceViewProps> = ({ currentUse
         </div>
 
         <div className="h-64 mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '12px'
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-              <Bar dataKey="assignedCredits" name="Assigned Credits" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="approvedCredits" name="Approved Credits" fill="#0F766E" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {!hasWeeklyActivity ? (
+            <div className="h-full flex flex-col items-center justify-center text-center text-xs text-gray-500 bg-[#F7F9FA] rounded-lg border border-dashed border-gray-200 p-6">
+              <BarChart3 className="w-7 h-7 text-gray-300 mb-2" />
+              <p className="font-semibold text-gray-700">No task or credit activity recorded in the past 7 days.</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">Live productivity metrics will populate here as tasks are assigned and approved.</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="day" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                <Bar dataKey="assignedCredits" name="Assigned Credits" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="approvedCredits" name="Approved Credits" fill="#0F766E" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 

@@ -8,45 +8,36 @@ import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, ShieldCheck, MapPin, AlertCircle, ArrowRight, Check } from 'lucide-react';
 import { StaffProfile } from '../../types/doorbly';
 import { StorageEngine } from '../../services/storageEngine';
-import { isSupabaseConfigured } from '../../services/supabaseClient';
 import { DoorblyLogo } from '../common/DoorblyLogo';
 
 interface LoginPageProps {
   onLoginSuccess: (profile: StaffProfile) => void;
-  onOpenBackendModal: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBackendModal }) => {
-  const [employeeId, setEmployeeId] = useState('DBL-OD-001');
-  const [password, setPassword] = useState('doorbly@2026');
-  const [rememberMe, setRememberMe] = useState(true);
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
+  const [employeeId, setEmployeeId] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(() => StorageEngine.consumeLogoutReason());
   const [isLoading, setIsLoading] = useState(false);
-
-  const allStaff = StorageEngine.getStaffProfiles();
-  const supabaseOnline = isSupabaseConfigured();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setInfoMessage(null);
     setIsLoading(true);
 
     setTimeout(() => {
-      const res = StorageEngine.loginByEmployeeId(employeeId);
+      const res = StorageEngine.loginByEmployeeId(employeeId, password, rememberMe);
       setIsLoading(false);
       if (res.success && res.profile) {
         onLoginSuccess(res.profile);
       } else {
         setErrorMessage(res.error || 'Invalid credentials or inactive account.');
       }
-    }, 350);
-  };
-
-  const handleQuickSelect = (staff: StaffProfile) => {
-    setEmployeeId(staff.employeeId);
-    setPassword('doorbly@2026');
-    setErrorMessage(null);
+    }, 300);
   };
 
   return (
@@ -58,16 +49,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
           showText={true}
           textVariant="light"
           badgeText="Remote Workstation"
-          subtitle="workstation.doorbly.com • Odisha Remote Operations"
         />
-
-        <button
-          onClick={onOpenBackendModal}
-          className="flex items-center space-x-1.5 text-xs text-white hover:text-white border border-white/20 px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 transition cursor-pointer"
-        >
-          <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-          <span className="hidden sm:inline">Backend Setup</span>
-        </button>
       </header>
 
       {/* Main Content Area */}
@@ -78,13 +60,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
           <div className="md:col-span-5 bg-[#123C45] text-white p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex flex-col gap-3 mb-6">
-                <DoorblyLogo
-                  size="xl"
-                  showText={true}
-                  textVariant="light"
-                  badgeText="Official"
-                  subtitle="Enterprise Workstation"
-                />
+                <div className="flex flex-col items-start leading-tight">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-black text-2xl tracking-tight leading-none lowercase">
+                      <span className="text-white">door</span>
+                      <span className="text-[#FACC15]">bly</span>
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#0F766E] text-teal-100 border border-teal-500/40">
+                      Official
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-medium text-teal-200/80 mt-1">
+                    Enterprise Workstation
+                  </span>
+                </div>
                 <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded bg-[#0F766E]/40 border border-teal-500/30 text-teal-200 text-xs font-semibold w-fit">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>30 Districts of Odisha</span>
@@ -129,6 +118,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
                 </p>
               </div>
 
+              {infoMessage && (
+                <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>{infoMessage}</span>
+                </div>
+              )}
+
               {errorMessage && (
                 <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start space-x-2">
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
@@ -148,9 +144,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
                     <input
                       type="text"
                       required
+                      autoComplete="username"
                       value={employeeId}
                       onChange={(e) => setEmployeeId(e.target.value)}
-                      placeholder="e.g. DBL-OD-001"
+                      placeholder="Enter Employee ID or Official Email"
                       className="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E] transition font-mono"
                     />
                   </div>
@@ -163,7 +160,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
                     </label>
                     <button
                       type="button"
-                      onClick={() => setErrorMessage('For password recovery or access credentials, please contact Central Admin Debabrata Mohanta (debabratamohanta884@gmail.com).')}
+                      onClick={() => setErrorMessage('Please contact Central Administration for workstation password recovery or reset.')}
                       className="text-[11px] text-[#0F766E] hover:underline"
                     >
                       Forgot Password?
@@ -206,7 +203,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-2.5 px-4 bg-[#0F766E] hover:bg-[#123C45] text-white font-semibold rounded-md text-xs transition flex items-center justify-center space-x-1.5 shadow-xs"
+                  className="w-full py-2.5 px-4 bg-[#0F766E] hover:bg-[#123C45] text-white font-semibold rounded-md text-xs transition flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
                 >
                   {isLoading ? (
                     <span>Authenticating...</span>
@@ -220,32 +217,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onOpenBack
               </form>
             </div>
 
-            {/* Authorized Staff Profiles */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-semibold text-gray-600 uppercase tracking-wide">
-                  Authorized Staff Directory
-                </span>
-                <span className="text-[10px] text-gray-400">Click to fill</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto p-1 bg-[#F7F9FA] rounded border border-gray-200">
-                {allStaff.map((staff) => (
-                  <button
-                    key={staff.id}
-                    type="button"
-                    onClick={() => handleQuickSelect(staff)}
-                    className={`text-left p-2 rounded text-[11px] border transition truncate ${
-                      employeeId === staff.employeeId
-                        ? 'bg-teal-50 border-teal-400 text-[#0F766E] font-semibold'
-                        : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <p className="truncate font-semibold text-gray-900">{staff.fullName}</p>
-                    <p className="text-[10px] text-gray-500 truncate">{staff.designationTitle}</p>
-                    <p className="text-[9px] font-mono text-[#0F766E] mt-0.5">{staff.employeeId} • {staff.districtName}</p>
-                  </button>
-                ))}
-              </div>
+            <div className="mt-6 pt-4 border-t border-gray-200 flex items-start space-x-2 text-[11px] text-gray-500">
+              <ShieldCheck className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
+              <span>
+                Workstation access requires authorized Employee ID and password. Privileged sessions auto-logout after inactivity or browser closure.
+              </span>
             </div>
 
           </div>

@@ -27,28 +27,36 @@ import { DoorblyLogo } from '../common/DoorblyLogo';
 
 interface NavbarProps {
   currentUser: StaffProfile;
-  onUserChange: (newUser: StaffProfile) => void;
   onLogout: () => void;
   onOpenBackendModal: () => void;
   isMobileSidebarOpen?: boolean;
   onToggleMobileSidebar?: () => void;
+  adminIdleSecondsLeft?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
-  onUserChange,
   onLogout,
   onOpenBackendModal,
   isMobileSidebarOpen = false,
-  onToggleMobileSidebar
+  onToggleMobileSidebar,
+  adminIdleSecondsLeft
 }) => {
   const [istTime, setIstTime] = useState<string>('');
   const [istDate, setIstDate] = useState<string>('');
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
-  const [allStaff, setAllStaff] = useState<StaffProfile[]>([]);
   const announcements = StorageEngine.getAnnouncements();
-  const supabaseOnline = isSupabaseConfigured();
+  const isAdmin =
+    (currentUser.systemRole === 'super_admin' || currentUser.permissionLevel === 'admin') &&
+    StorageEngine.isAdminSessionVerified();
+  const supabaseOnline = isAdmin ? isSupabaseConfigured() : false;
+
+  const formatCountdown = (totalSec: number) => {
+    const mins = Math.floor(Math.max(0, totalSec) / 60);
+    const secs = Math.max(0, totalSec) % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   // Live IST Clock (Asia/Kolkata)
   useEffect(() => {
@@ -77,16 +85,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    setAllStaff(StorageEngine.getStaffProfiles());
-  }, []);
-
-  const handleRoleSelect = (staff: StaffProfile) => {
-    StorageEngine.setCurrentUserId(staff.id);
-    onUserChange(staff);
-    setShowRoleMenu(false);
-  };
-
   return (
     <header className="sticky top-0 z-40 bg-[#0B3B32] border-b border-teal-950/80 px-3 sm:px-4 lg:px-6 py-2 flex items-center justify-between shadow-md text-white">
       {/* Brand & Mobile Hamburger */}
@@ -108,10 +106,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             showText={true}
             textVariant="light"
             badgeText="Workstation"
-            subtitle="Odisha Remote Operations"
             animateFlip={true}
             showOrbitLight={true}
-            hideSubtitleOnMobile={true}
           />
         </div>
 
@@ -133,18 +129,31 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right Actions */}
       <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
-        {/* Backend Connectivity Status Button */}
-        <button
-          onClick={onOpenBackendModal}
-          title="Supabase & Database Connectivity"
-          className="flex items-center space-x-1 text-xs px-2 sm:px-2.5 py-1 rounded-md border border-white/20 bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
-        >
-          <Database className={`w-3.5 h-3.5 ${supabaseOnline ? 'text-emerald-400' : 'text-amber-400'}`} />
-          <span className="hidden sm:inline font-medium text-white">
-            {supabaseOnline ? 'Supabase Live' : 'Offline / Local'}
-          </span>
-          <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-        </button>
+        {/* Admin Auto-Logout Timer Badge (Admin Only) */}
+        {isAdmin && typeof adminIdleSecondsLeft === 'number' && (
+          <div
+            title="Admin session auto-logs out when idle or on browser close"
+            className="hidden md:flex items-center space-x-1 text-[11px] px-2 py-1 rounded-md border border-amber-400/35 bg-amber-500/15 text-amber-200 font-mono"
+          >
+            <Shield className="w-3 h-3 text-amber-300" />
+            <span>Auto-lock {formatCountdown(adminIdleSecondsLeft)}</span>
+          </div>
+        )}
+
+        {/* Backend Connectivity Status Button (Admin Only) */}
+        {isAdmin && (
+          <button
+            onClick={onOpenBackendModal}
+            title="Supabase & Database Connectivity"
+            className="flex items-center space-x-1 text-xs px-2 sm:px-2.5 py-1 rounded-md border border-white/20 bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+          >
+            <Database className={`w-3.5 h-3.5 ${supabaseOnline ? 'text-emerald-400' : 'text-amber-400'}`} />
+            <span className="hidden sm:inline font-medium text-white">
+              {supabaseOnline ? 'Supabase Live' : 'Offline / Local'}
+            </span>
+            <span className={`w-2 h-2 rounded-full ${supabaseOnline ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+          </button>
+        )}
 
         {/* Notifications Dropdown */}
         <div className="relative">
@@ -259,56 +268,42 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {showRoleMenu && (
-            <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50">
-              <div className="pb-2 border-b border-gray-100">
+            <div className="absolute right-0 mt-2 w-[min(19rem,calc(100vw-1.5rem))] bg-white border border-gray-200 rounded-lg shadow-xl p-3 z-50 text-gray-900">
+              <div className="pb-2.5 border-b border-gray-100">
                 <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
                   Signed in as
                 </p>
-                <p className="font-bold text-sm text-gray-900">{currentUser.fullName}</p>
+                <p className="font-bold text-sm text-gray-900 mt-0.5">{currentUser.fullName}</p>
                 <p className="text-xs text-[#0F766E] font-medium">{currentUser.designationTitle}</p>
                 <p className="text-[11px] text-gray-500">{currentUser.departmentName}</p>
+                <p className="text-[10px] font-mono text-gray-400 mt-1">
+                  ID: {currentUser.employeeId} • {currentUser.districtName}
+                </p>
               </div>
 
-              <div className="mt-2.5">
-                <div className="flex items-center justify-between pb-1.5">
-                  <span className="text-[11px] font-semibold text-gray-600">
-                    Staff Account Switcher
+              {isAdmin && typeof adminIdleSecondsLeft === 'number' && (
+                <div className="mt-2.5 p-2 rounded-md bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between">
+                  <span className="flex items-center space-x-1.5 font-medium">
+                    <Shield className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Admin Auto-Logout</span>
                   </span>
-                  <span className="text-[10px] text-gray-400 font-normal">Active Profiles</span>
+                  <span className="font-mono font-bold">{formatCountdown(adminIdleSecondsLeft)}</span>
                 </div>
-                <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
-                  {allStaff.map((staff) => {
-                    const isSelected = staff.id === currentUser.id;
-                    return (
-                      <button
-                        key={staff.id}
-                        onClick={() => handleRoleSelect(staff)}
-                        className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition text-xs ${
-                          isSelected
-                            ? 'bg-teal-50 text-[#0F766E] font-semibold border border-teal-200'
-                            : 'hover:bg-gray-50 text-gray-700'
-                        }`}
-                      >
-                        <div className="truncate">
-                          <p className="truncate text-xs">{staff.fullName}</p>
-                          <p className="text-[10px] text-gray-500 truncate">
-                            {staff.designationTitle} ({staff.districtName})
-                          </p>
-                        </div>
-                        {isSelected && <CheckCircle className="w-3.5 h-3.5 text-[#0F766E] shrink-0 ml-1" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              )}
 
-              <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between">
+              <div className="mt-2.5 pt-2 border-t border-gray-100 space-y-1.5">
+                <p className="text-[10px] text-gray-500 leading-relaxed">
+                  To switch accounts, log out and sign in with another Employee ID and password.
+                </p>
                 <button
-                  onClick={onLogout}
-                  className="flex items-center space-x-1.5 text-xs text-red-600 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition"
+                  onClick={() => {
+                    setShowRoleMenu(false);
+                    onLogout();
+                  }}
+                  className="w-full flex items-center justify-center space-x-1.5 text-xs text-red-600 hover:text-red-700 font-semibold px-3 py-2 rounded-md bg-red-50 hover:bg-red-100 transition cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span>Log Out Workstation</span>
+                  <span>{isAdmin ? 'Lock & Log Out Admin' : 'Log Out / Switch Account'}</span>
                 </button>
               </div>
             </div>

@@ -64,7 +64,7 @@ import {
   INITIAL_WALLET_TXNS,
   INITIAL_WITHDRAWALS,
   INITIAL_NOTIFICATIONS
-} from '../constants/mockSeedData';
+} from '../constants/operationalBaseline';
 
 const STORAGE_KEYS = {
   VERSION: 'doorbly_storage_version',
@@ -94,6 +94,11 @@ const STORAGE_KEYS = {
   WORK_ASSIGNMENTS: 'doorbly_staff_work_assignments',
   WITHDRAWALS: 'doorbly_staff_withdrawals',
   NOTIFICATIONS: 'doorbly_staff_notifications'
+};
+
+const SESSION_KEYS = {
+  ADMIN_VERIFIED: 'doorbly_admin_session_verified',
+  LOGOUT_REASON: 'doorbly_logout_reason'
 };
 
 const KEY_TO_TABLE: Record<string, string> = {
@@ -162,24 +167,44 @@ function setStoredItem<T>(key: string, value: T): void {
   }
 }
 
-// Initialize seed data if not present (clears legacy mock/demo data and seeds wallet baseline)
+// Initialize production operational baseline if not present
 export function initializeStorageIfNeeded(): void {
   const CURRENT_STORAGE_VERSION = 'doorbly_realtime_v3_production';
   const existingVersion = localStorage.getItem(STORAGE_KEYS.VERSION);
 
-  // If upgrading version, purge all legacy mock data and refresh pristine operational baseline
+  // If upgrading version, reset local cache and initialize clean operational baseline
   if (existingVersion !== CURRENT_STORAGE_VERSION) {
     Object.values(STORAGE_KEYS).forEach(k => {
-      if (k !== STORAGE_KEYS.CURRENT_USER_ID) {
-        localStorage.removeItem(k);
-      }
+      localStorage.removeItem(k);
     });
-    setStoredItem(STORAGE_KEYS.CURRENT_USER_ID, 'staff-admin-01');
+    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    sessionStorage.removeItem(SESSION_KEYS.ADMIN_VERIFIED);
     localStorage.setItem(STORAGE_KEYS.VERSION, CURRENT_STORAGE_VERSION);
   }
 
   if (!localStorage.getItem(STORAGE_KEYS.STAFF)) {
     setStoredItem(STORAGE_KEYS.STAFF, INITIAL_STAFF_MEMBERS);
+  } else {
+    const existingStaff = getStoredItem<StaffProfile[]>(STORAGE_KEYS.STAFF, INITIAL_STAFF_MEMBERS);
+    let staffChanged = false;
+    const updatedStaff = existingStaff.map((s) => {
+      if (s.id === 'staff-admin-01') {
+        const nextEmail =
+          !s.email || s.email === 'debabratamohanta884@gmail.com'
+            ? 'debabrata.tribune@gmail.com'
+            : s.email;
+        const nextPassword =
+          !s.password || s.password === 'doorbly@2026' ? 'Devraj@1122' : s.password;
+        if (nextEmail !== s.email || nextPassword !== s.password) {
+          staffChanged = true;
+          return { ...s, email: nextEmail, password: nextPassword };
+        }
+      }
+      return s;
+    });
+    if (staffChanged) {
+      setStoredItem(STORAGE_KEYS.STAFF, updatedStaff);
+    }
   }
   if (!localStorage.getItem(STORAGE_KEYS.DISTRICTS)) {
     setStoredItem(STORAGE_KEYS.DISTRICTS, ODISHA_DISTRICTS_INITIAL);
@@ -251,57 +276,165 @@ initializeStorageIfNeeded();
 
 export const StorageEngine = {
   // --- AUTHENTICATION & SESSION ---
-  getCurrentUserId(): string {
-    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID);
-    if (!raw) return 'staff-admin-01';
+  isAdminUser(profile?: StaffProfile | null): boolean {
+    if (!profile) return false;
+    return profile.systemRole === 'super_admin' || profile.permissionLevel === 'admin';
+  },
+
+  isAdminSessionVerified(): boolean {
     try {
-      const parsed = JSON.parse(raw);
-      if (typeof parsed === 'string' && parsed.trim()) return parsed.trim();
+      return sessionStorage.getItem(SESSION_KEYS.ADMIN_VERIFIED) === 'true';
     } catch {
-      if (typeof raw === 'string' && raw.trim()) return raw.trim();
+      return false;
     }
-    return 'staff-admin-01';
   },
 
-  setCurrentUserId(id: string): void {
-    setStoredItem(STORAGE_KEYS.CURRENT_USER_ID, id);
+  consumeLogoutReason(): string | null {
+    try {
+      const reason = sessionStorage.getItem(SESSION_KEYS.LOGOUT_REASON);
+      if (reason) {
+        sessionStorage.removeItem(SESSION_KEYS.LOGOUT_REASON);
+        return reason;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   },
 
-  getCurrentUser(): StaffProfile {
+  getCurrentUserId(): string | null {
+    const parseRaw = (raw: string | null): string | null => {
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === 'string' && parsed.trim()) return parsed.trim();
+      } catch {
+        if (typeof raw === 'string' && raw.trim()) return raw.trim();
+      }
+      return null;
+    };
+
+    try {
+      const sessionId = parseRaw(sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID));
+      if (sessionId) return sessionId;
+      const localId = parseRaw(localStorage.getItem(STORAGE_KEYS.CURRENT_USER_ID));
+      return localId;
+    } catch {
+      return null;
+    }
+  },
+
+  setCurrentUserId(id: string, persistInLocalStorage: boolean = false): void {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+      const serialized = JSON.stringify(id);
+      if (persistInLocalStorage) {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, serialized);
+      } else {
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, serialized);
+      }
+    } catch (err) {
+      console.error('Error updating session user ID:', err);
+    }
+  },
+
+  getCurrentUser(): StaffProfile | null {
     try {
       const id = this.getCurrentUserId();
+      if (!id) return null;
+
       const staffList = this.getStaffProfiles();
       const found = staffList.find(s => s.id === id || s.employeeId === id);
-      if (found) return found;
-      if (staffList.length > 0) return staffList[0];
-      return INITIAL_STAFF_MEMBERS[0];
+      if (!found) return null;
+
+      // Admin panel requires active session-scoped ID + password verification.
+      // Auto-logout any unverified or stale persisted admin session.
+      if (this.isAdminUser(found) && !this.isAdminSessionVerified()) {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+        sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+        return null;
+      }
+
+      return found;
     } catch {
-      return INITIAL_STAFF_MEMBERS[0];
+      return null;
     }
   },
 
-  loginByEmployeeId(employeeId: string): { success: boolean; profile?: StaffProfile; error?: string } {
+  loginByEmployeeId(
+    employeeId: string,
+    password: string = '',
+    rememberMe: boolean = false
+  ): { success: boolean; profile?: StaffProfile; error?: string } {
+    const cleanInput = employeeId.trim();
+    if (!cleanInput || !password) {
+      return { success: false, error: 'Please enter both Employee ID / Email and Workstation Password.' };
+    }
+
     const list = this.getStaffProfiles();
-    const cleanId = employeeId.trim().toUpperCase();
-    const user = list.find(s => s.employeeId.toUpperCase() === cleanId || s.email.toLowerCase() === cleanId.toLowerCase());
+    const cleanId = cleanInput.toUpperCase();
+    const user = list.find(
+      s => s.employeeId.toUpperCase() === cleanId || s.email.toLowerCase() === cleanInput.toLowerCase()
+    );
 
     if (!user) {
-      return { success: false, error: 'Employee ID or email not found in authorized Doorbly registry.' };
+      return { success: false, error: 'Invalid Employee ID or workstation password.' };
     }
 
     if (user.status === 'inactive' || user.status === 'suspended') {
-      return { success: false, error: `Account access denied. Your employee profile status is currently "${user.status.toUpperCase()}". Contact HR Administration.` };
+      return {
+        success: false,
+        error: `Account access denied. Your employee profile status is currently "${user.status.toUpperCase()}". Contact HR Administration.`
+      };
     }
 
-    this.setCurrentUserId(user.id);
+    const expectedPassword = user.password || (this.isAdminUser(user) ? 'Devraj@1122' : 'doorbly@2026');
+    if (password !== expectedPassword) {
+      return { success: false, error: 'Invalid Employee ID or workstation password.' };
+    }
+
+    try {
+      sessionStorage.removeItem(SESSION_KEYS.LOGOUT_REASON);
+      const isAdmin = this.isAdminUser(user);
+      if (isAdmin) {
+        // Admin sessions never persist in localStorage — tab/browser close auto-logs out.
+        sessionStorage.setItem(SESSION_KEYS.ADMIN_VERIFIED, 'true');
+        this.setCurrentUserId(user.id, false);
+      } else {
+        sessionStorage.removeItem(SESSION_KEYS.ADMIN_VERIFIED);
+        this.setCurrentUserId(user.id, rememberMe);
+      }
+    } catch {
+      this.setCurrentUserId(user.id, false);
+    }
+
     this.logAudit(user.id, user.fullName, user.systemRole, 'LOGIN', 'Authentication', `Logged in successfully with ID ${user.employeeId}`);
     return { success: true, profile: user };
   },
 
-  logout(): void {
+  logout(reason?: string): void {
     const user = this.getCurrentUser();
-    this.logAudit(user.id, user.fullName, user.systemRole, 'LOGOUT', 'Authentication', `Logged out`);
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    if (user) {
+      this.logAudit(
+        user.id,
+        user.fullName,
+        user.systemRole,
+        'LOGOUT',
+        'Authentication',
+        reason ? `Logged out (${reason})` : 'Logged out'
+      );
+    }
+    try {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+      sessionStorage.removeItem(SESSION_KEYS.ADMIN_VERIFIED);
+      if (reason) {
+        sessionStorage.setItem(SESSION_KEYS.LOGOUT_REASON, reason);
+      }
+    } catch {
+      // Ignore storage cleanup errors
+    }
   },
 
   // --- STAFF PROFILES ---

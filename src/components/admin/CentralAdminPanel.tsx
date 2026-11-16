@@ -84,7 +84,6 @@ import { COMPLETE_DOORBLY_SCHEMA_SQL } from '../../sql/schemaSql';
 import { StaffWorkEarningsAdmin } from './StaffWorkEarningsAdmin';
 import { AdminWalletControlCentre } from './AdminWalletControlCentre';
 import { SqlSupabaseAdminIntegration } from './SqlSupabaseAdminIntegration';
-import { DoorblyLogo } from '../common/DoorblyLogo';
 
 interface CentralAdminPanelProps {
   currentUser: StaffProfile;
@@ -112,6 +111,9 @@ export type AdminSubTab =
   | 'audit_logs';
 
 export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUser }) => {
+  const isAuthorizedAdmin =
+    StorageEngine.isAdminUser(currentUser) && StorageEngine.isAdminSessionVerified();
+
   const [activeTab, setActiveTab] = useState<AdminSubTab>('overview');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const navScrollRef = React.useRef<HTMLDivElement>(null);
@@ -173,6 +175,7 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
   const [empDesignationId, setEmpDesignationId] = useState('tele_caller');
   const [empDistrictId, setEmpDistrictId] = useState('khordha');
   const [empRole, setEmpRole] = useState<StaffProfile['systemRole']>('employee');
+  const [empPassword, setEmpPassword] = useState('doorbly@2026');
 
   // Add Partner Form State
   const [partnerName, setPartnerName] = useState('');
@@ -263,7 +266,8 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
             ? 'coordinator'
             : 'staff',
         reportingManagerId: currentUser.id,
-        reportingManagerName: currentUser.fullName
+        reportingManagerName: currentUser.fullName,
+        password: empPassword.trim() || 'doorbly@2026'
       },
       currentUser
     );
@@ -273,6 +277,7 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
     setEmpName('');
     setEmpEmail('');
     setEmpMobile('+91 ');
+    setEmpPassword('doorbly@2026');
     showToast(`Employee ${empName.trim()} created with workstation access!`);
   };
 
@@ -531,6 +536,10 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
     .filter((b) => b.bookingStatus === 'completed')
     .reduce((sum, b) => sum + b.partnerPayout, 0);
 
+  if (!isAuthorizedAdmin) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
       {/* Toast Alert */}
@@ -544,7 +553,9 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
       {/* Main Administrative Control Header */}
       <div className="bg-[#123C45] text-white rounded-xl p-5 border border-teal-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start space-x-3.5">
-          <DoorblyLogo size="lg" rounded={true} />
+          <div className="w-11 h-11 rounded-xl bg-[#0F766E] border border-teal-400/30 flex items-center justify-center shrink-0">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
           <div>
             <div className="flex items-center space-x-2">
               <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#0F766E] text-white">
@@ -2100,7 +2111,7 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
               <div>
                 <h4 className="font-bold text-sm text-gray-900">Interactive SQL Console & Supabase Cloud Hub</h4>
                 <p className="text-xs text-gray-600 mt-0.5">
-                  Execute live or simulated SQL queries, inspect all 23 database tables, test connection pings, and push local data to Supabase.
+                  Execute live or local-table SQL queries, inspect all 23 database tables, test connection pings, and push local data to Supabase.
                 </p>
               </div>
             </div>
@@ -2305,18 +2316,31 @@ export const CentralAdminPanel: React.FC<CentralAdminPanelProps> = ({ currentUse
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-1">System Role</label>
-                <select
-                  value={empRole}
-                  onChange={(e) => setEmpRole(e.target.value as StaffProfile['systemRole'])}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#0F766E]"
-                >
-                  <option value="employee">Employee / Remote Executive</option>
-                  <option value="district_coordinator">District Coordinator (DC)</option>
-                  <option value="district_manager">District Manager (DM)</option>
-                  <option value="super_admin">Super Administrator</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">System Role</label>
+                  <select
+                    value={empRole}
+                    onChange={(e) => setEmpRole(e.target.value as StaffProfile['systemRole'])}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#0F766E]"
+                  >
+                    <option value="employee">Employee / Remote Executive</option>
+                    <option value="district_coordinator">District Coordinator (DC)</option>
+                    <option value="district_manager">District Manager (DM)</option>
+                    <option value="super_admin">Super Administrator</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-1">Workstation Password *</label>
+                  <input
+                    type="text"
+                    required
+                    value={empPassword}
+                    onChange={(e) => setEmpPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#0F766E] font-mono"
+                  />
+                </div>
               </div>
               <div className="pt-3 border-t border-gray-200 flex justify-end space-x-2">
                 <button

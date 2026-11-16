@@ -30,7 +30,7 @@ import {
   X
 } from 'lucide-react';
 import { StaffProfile, SystemRole, DesignationId } from '../../types/doorbly';
-import { DoorblyLogo } from '../common/DoorblyLogo';
+import { StorageEngine } from '../../services/storageEngine';
 
 export type ActiveTab =
   | 'dashboard'
@@ -78,7 +78,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const role: SystemRole = currentUser.systemRole;
   const desig: DesignationId | string = currentUser.designationId;
-  const isAdmin = role === 'super_admin' || currentUser.permissionLevel === 'admin';
+  const isAdmin =
+    (role === 'super_admin' || currentUser.permissionLevel === 'admin') &&
+    StorageEngine.isAdminSessionVerified();
   const isManager = role === 'district_manager' || currentUser.permissionLevel === 'manager';
   const isCoordinator = role === 'district_coordinator' || currentUser.permissionLevel === 'coordinator';
 
@@ -237,7 +239,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Employee Quick Identity Header */}
         <div className="p-3 border-b border-teal-800/40 bg-black/15 flex items-center justify-between">
           <div className="flex items-center space-x-2.5 min-w-0">
-            <DoorblyLogo size="sm" rounded={true} />
+            <div className="w-8 h-8 rounded-full bg-white/15 border border-teal-400/30 text-yellow-300 flex items-center justify-center font-bold text-xs uppercase shrink-0">
+              {currentUser.fullName.charAt(0)}
+            </div>
             <div className="truncate">
               <p className="text-xs font-semibold text-white truncate leading-tight">
                 {currentUser.fullName}

@@ -20,7 +20,6 @@ import {
 import { isSupabaseConfigured, getSupabaseConfig } from '../../services/supabaseClient';
 import { isFirebaseConfigured, getFirebaseStatus } from '../../services/firebaseAuth';
 import { COMPLETE_DOORBLY_SCHEMA_SQL } from '../../sql/schemaSql';
-import { DoorblyLogo } from './DoorblyLogo';
 
 interface BackendStatusModalProps {
   isOpen: boolean;
@@ -66,7 +65,9 @@ VITE_FIREBASE_APP_ID="1:123456789:web:abcdef"`;
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-[#123C45] text-white">
           <div className="flex items-center space-x-2.5">
-            <DoorblyLogo size="sm" rounded={true} />
+            <div className="w-8 h-8 rounded-lg bg-[#0F766E] border border-teal-400/30 flex items-center justify-center shrink-0">
+              <Database className="w-4 h-4 text-white" />
+            </div>
             <div>
               <h3 className="text-sm font-bold text-white">Backend Infrastructure & Database Status</h3>
               <p className="text-[11px] text-teal-200/80">workstation.doorbly.com • Supabase & Firebase Integration</p>

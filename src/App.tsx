@@ -4,7 +4,7 @@
  * Target: workstation.doorbly.com (30 Districts of Odisha, India)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -40,6 +40,8 @@ import { StaffWalletView } from './components/wallet/StaffWalletView';
 import { HrManagementView, TechnicalManagementView } from './components/common/TechnicalHrViews';
 import { BackendStatusModal } from './components/common/BackendStatusModal';
 
+const ADMIN_IDLE_TIMEOUT_SECONDS = 300; // 5 minutes auto-logout for Admin session
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState<StaffProfile | null>(() => {
     return StorageEngine.getCurrentUser();
@@ -47,36 +49,77 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [isBackendModalOpen, setIsBackendModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [adminIdleSecondsLeft, setAdminIdleSecondsLeft] = useState<number>(ADMIN_IDLE_TIMEOUT_SECONDS);
+  const lastActivityRef = useRef<number>(Date.now());
 
-  // Auto-route role defaults if user changes
-  const handleUserChange = (newUser: StaffProfile) => {
-    setCurrentUser(newUser);
-    setActiveTab('dashboard');
-  };
+  const isAdmin = Boolean(
+    currentUser &&
+      (currentUser.systemRole === 'super_admin' || currentUser.permissionLevel === 'admin') &&
+      StorageEngine.isAdminSessionVerified()
+  );
 
-  const handleLogout = () => {
-    StorageEngine.logout();
+  const handleLogout = (reason?: string) => {
+    StorageEngine.logout(reason);
     setCurrentUser(null);
+    setActiveTab('dashboard');
+    setIsBackendModalOpen(false);
+    setIsMobileSidebarOpen(false);
   };
 
   const handleLoginSuccess = (profile: StaffProfile) => {
+    lastActivityRef.current = Date.now();
+    setAdminIdleSecondsLeft(ADMIN_IDLE_TIMEOUT_SECONDS);
     setCurrentUser(profile);
     setActiveTab('dashboard');
+    setIsBackendModalOpen(false);
   };
+
+  // Auto-logout Admin Panel on inactivity (or when returning after idle expiry)
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    lastActivityRef.current = Date.now();
+    setAdminIdleSecondsLeft(ADMIN_IDLE_TIMEOUT_SECONDS);
+
+    const resetActivity = () => {
+      lastActivityRef.current = Date.now();
+      setAdminIdleSecondsLeft(ADMIN_IDLE_TIMEOUT_SECONDS);
+    };
+
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach((evt) => window.addEventListener(evt, resetActivity, { passive: true }));
+
+    const timer = window.setInterval(() => {
+      const elapsedSeconds = Math.floor((Date.now() - lastActivityRef.current) / 1000);
+      const remaining = Math.max(0, ADMIN_IDLE_TIMEOUT_SECONDS - elapsedSeconds);
+      setAdminIdleSecondsLeft(remaining);
+
+      if (remaining <= 0) {
+        StorageEngine.logout('Admin session automatically logged out due to inactivity.');
+        setCurrentUser(null);
+        setActiveTab('dashboard');
+        setIsBackendModalOpen(false);
+        setIsMobileSidebarOpen(false);
+      }
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+      events.forEach((evt) => window.removeEventListener(evt, resetActivity));
+    };
+  }, [isAdmin]);
+
+  // Safety guard: never leave non-admin on admin_panel tab
+  useEffect(() => {
+    if (activeTab === 'admin_panel' && !isAdmin) {
+      setActiveTab('dashboard');
+    }
+  }, [activeTab, isAdmin]);
 
   // If user is logged out, render the Login Page
   if (!currentUser) {
     return (
-      <>
-        <LoginPage
-          onLoginSuccess={handleLoginSuccess}
-          onOpenBackendModal={() => setIsBackendModalOpen(true)}
-        />
-        <BackendStatusModal
-          isOpen={isBackendModalOpen}
-          onClose={() => setIsBackendModalOpen(false)}
-        />
-      </>
+      <LoginPage onLoginSuccess={handleLoginSuccess} />
     );
   }
 
@@ -120,11 +163,13 @@ export default function App() {
       {/* Top Navigation */}
       <Navbar
         currentUser={currentUser}
-        onUserChange={handleUserChange}
-        onLogout={handleLogout}
-        onOpenBackendModal={() => setIsBackendModalOpen(true)}
+        onLogout={() => handleLogout()}
+        onOpenBackendModal={() => {
+          if (isAdmin) setIsBackendModalOpen(true);
+        }}
         isMobileSidebarOpen={isMobileSidebarOpen}
         onToggleMobileSidebar={() => setIsMobileSidebarOpen(prev => !prev)}
+        adminIdleSecondsLeft={isAdmin ? adminIdleSecondsLeft : undefined}
       />
 
       {/* Main Body Layout with Sidebar */}
@@ -134,10 +179,11 @@ export default function App() {
           currentUser={currentUser}
           activeTab={activeTab}
           onTabChange={(tab) => {
+            if (tab === 'admin_panel' && !isAdmin) return;
             setActiveTab(tab);
             setIsMobileSidebarOpen(false);
           }}
-          onLogout={handleLogout}
+          onLogout={() => handleLogout()}
           pendingApprovalsCount={pendingApprovalsCount}
           assignedTasksCount={assignedTasksCount}
           isMobileOpen={isMobileSidebarOpen}
@@ -166,7 +212,7 @@ export default function App() {
           {activeTab === 'announcements' && <AnnouncementsView currentUser={currentUser} />}
           {activeTab === 'profile' && <MyProfileView currentUser={currentUser} />}
           {activeTab === 'wallet' && <StaffWalletView currentUser={currentUser} />}
-          {activeTab === 'admin_panel' && <CentralAdminPanel currentUser={currentUser} />}
+          {activeTab === 'admin_panel' && isAdmin && <CentralAdminPanel currentUser={currentUser} />}
         </main>
       </div>
 
@@ -249,11 +295,13 @@ export default function App() {
         </button>
       </nav>
 
-      {/* Backend & Database Connectivity Modal */}
-      <BackendStatusModal
-        isOpen={isBackendModalOpen}
-        onClose={() => setIsBackendModalOpen(false)}
-      />
+      {/* Backend & Database Connectivity Modal (Admin Only) */}
+      {isAdmin && (
+        <BackendStatusModal
+          isOpen={isBackendModalOpen}
+          onClose={() => setIsBackendModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

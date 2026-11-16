@@ -28,40 +28,40 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  // Dimension presets with tailored orbit ring, enlarged typography, and sharp pinpoint green laser light
+  // Dimension presets with tailored orbit ring, compact badge typography, and sharp pinpoint green laser light
   const sizeMap = {
     xs: {
       img: 'w-6 h-6',
       text: 'text-sm',
-      badge: 'text-[9px] px-1',
+      badge: 'text-[7px] px-1 py-[1px]',
       orbitInset: '-inset-1',
       pinpointSize: 'w-[3.5px] h-[3.5px]'
     },
     sm: {
       img: 'w-8 h-8',
       text: 'text-lg',
-      badge: 'text-[10px] px-1.5',
+      badge: 'text-[8px] px-1.5 py-[1px]',
       orbitInset: '-inset-1',
       pinpointSize: 'w-[4px] h-[4px]'
     },
     md: {
       img: 'w-10 h-10',
       text: 'text-xl',
-      badge: 'text-[10px] px-1.5',
+      badge: 'text-[8px] sm:text-[9px] px-1.5 py-[1px]',
       orbitInset: '-inset-1.5',
       pinpointSize: 'w-[5px] h-[5px]'
     },
     lg: {
       img: 'w-14 h-14',
       text: 'text-2xl',
-      badge: 'text-[11px] px-2',
+      badge: 'text-[9px] px-1.5 py-0.5',
       orbitInset: '-inset-2',
       pinpointSize: 'w-[6px] h-[6px]'
     },
     xl: {
       img: 'w-20 h-20',
       text: 'text-3xl',
-      badge: 'text-xs px-2.5',
+      badge: 'text-[10px] px-2 py-0.5',
       orbitInset: '-inset-2.5',
       pinpointSize: 'w-[7px] h-[7px]'
     }
@@ -111,29 +111,29 @@ export const DoorblyLogo: React.FC<DoorblyLogoProps> = ({
 
       {/* Optional Brand Typography */}
       {showText && (
-        <div className="leading-tight">
-          <div className="flex items-center space-x-1.5">
-            <span
-              className={`font-black tracking-tight ${currentSize.text} lowercase inline-flex items-center`}
-            >
-              <span className={textVariant === 'light' ? 'text-white' : 'text-gray-900'}>door</span>
-              <span className="text-[#FACC15]">bly</span>
-            </span>
-            {badgeText && (
+        <div className="flex flex-col leading-none min-w-0">
+          <span
+            className={`font-black tracking-tight ${currentSize.text} lowercase inline-flex items-center leading-none`}
+          >
+            <span className={textVariant === 'light' ? 'text-white' : 'text-gray-900'}>door</span>
+            <span className="text-[#FACC15]">bly</span>
+          </span>
+          {badgeText && (
+            <div className="mt-1">
               <span
-                className={`font-bold uppercase tracking-wider rounded ${currentSize.badge} ${
+                className={`inline-block font-bold uppercase tracking-wider rounded leading-none ${currentSize.badge} ${
                   textVariant === 'light'
-                    ? 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/35'
-                    : 'bg-[#0F766E]/10 text-[#0F766E]'
+                    ? 'bg-green-400/15 text-[#86EFAC] border border-green-400/35'
+                    : 'bg-green-100 text-green-700 border border-green-300'
                 }`}
               >
                 {badgeText}
               </span>
-            )}
-          </div>
+            </div>
+          )}
           {subtitle && (
             <p
-              className={`text-[11px] truncate ${
+              className={`text-[10px] leading-tight mt-0.5 truncate ${
                 hideSubtitleOnMobile ? 'hidden sm:block' : ''
               } ${
                 textVariant === 'light' ? 'text-teal-200/90' : 'text-gray-500'

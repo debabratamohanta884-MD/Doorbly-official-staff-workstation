@@ -129,6 +129,7 @@ export interface StaffProfile {
   status: 'active' | 'inactive' | 'suspended' | 'probation';
   photoUrl?: string;
   permissionLevel: 'admin' | 'manager' | 'coordinator' | 'staff';
+  password?: string;
 }
 
 // 4. District & 18. Daily District Targets

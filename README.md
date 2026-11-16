@@ -70,7 +70,7 @@ The platform orchestrates daily task assignments, work submission verification, 
 │   │   ├── support/        # Helpdesk ticket resolution system
 │   │   ├── tasks/          # My Daily Tasks, assignment & submission modals
 │   │   └── wallet/         # Staff individual earnings wallet & withdrawals
-│   ├── constants/          # Districts, departments, branding, task values
+│   ├── constants/          # Districts, departments, branding, task values, baseline
 │   ├── services/           # Supabase client, Firebase auth, StorageEngine
 │   ├── sql/                # Complete PostgreSQL schema (schema.sql & schemaSql.ts)
 │   ├── types/              # Comprehensive TypeScript interfaces & domain types
@@ -79,6 +79,7 @@ The platform orchestrates daily task assignments, work submission verification, 
 ├── .env.example            # Environment variables configuration
 ├── package.json            # Scripts & project dependencies
 ├── tsconfig.json           # Strict TypeScript configuration
+├── vercel.json             # Vercel SPA routing, headers & Vite build config
 └── vite.config.ts          # Vite build & plugin configuration
 ```
 
@@ -145,27 +146,26 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔑 Authorized Baseline Credentials
+## 🔐 Authentication & Session Security
 
-The system provides an initial executive profile for immediate access:
-
-| Field | Value |
-| :--- | :--- |
-| **Employee ID** | `DBL-OD-001` |
-| **Email** | `debabratamohanta884@gmail.com` |
-| **Designation** | State Director & Central Admin |
-| **Role** | `super_admin` |
-| **Headquarters** | Khordha (Bhubaneswar HQ) |
+Workstation sign-in requires an authorized Employee ID (or official email) and password:
+- Privileged Central Admin sessions are isolated to browser `sessionStorage` and automatically log out after inactivity or tab/browser closure.
+- New staff profiles and workstation passwords are provisioned by Central Administration.
 
 ---
 
 ## 🚢 Deployment
 
-### Vercel / Netlify
-1. Connect your GitHub repository to Vercel or Netlify.
-2. Set Build Command: `npm run build`
-3. Set Output Directory: `dist`
-4. Add environment variables: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+### Vercel (Recommended)
+This project includes a preconfigured `vercel.json` with Vite build settings and SPA fallback rewrites:
+1. Push or import this repository in the [Vercel Dashboard](https://vercel.com/new) (or run `npx vercel --prod`).
+2. Vercel auto-detects **Vite**:
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+3. Add Environment Variables in **Project Settings → Environment Variables**:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Deploy — all client-side routes automatically rewrite cleanly to `/index.html`.
 
 ### Docker
 ```dockerfile

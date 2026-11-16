@@ -18,5 +18,9 @@ export default defineConfig(() => {
       hmr: false,
       watch: null,
     },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+    },
   };
 });

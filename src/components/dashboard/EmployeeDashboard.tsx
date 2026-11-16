@@ -48,9 +48,10 @@ export const EmployeeDashboard: React.FC<EmployeeDashboardProps> = ({ currentUse
   // Performance Score: Approved Credits / Assigned Credits * 100
   const performanceScore = totalAssignedCredits > 0
     ? Math.min(100, Math.round((totalCreditsEarned / totalAssignedCredits) * 100))
-    : 100;
+    : 0;
 
   const getScoreClassification = (score: number) => {
+    if (totalAssignedCredits === 0) return { label: 'Baseline', color: 'bg-gray-50 text-gray-600 border-gray-200' };
     if (score >= 90) return { label: 'Excellent', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
     if (score >= 75) return { label: 'Good', color: 'bg-teal-50 text-teal-700 border-teal-200' };
     if (score >= 60) return { label: 'Needs Improvement', color: 'bg-amber-50 text-amber-700 border-amber-200' };

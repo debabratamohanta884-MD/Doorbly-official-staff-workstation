@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { StaffProfile, JobCandidate, CandidateStage } from '../../types/doorbly';
 import { StorageEngine } from '../../services/storageEngine';
+import { isSupabaseConfigured, TABLE_METADATA_MASTER } from '../../services/supabaseClient';
 
 interface HrManagementViewProps {
   currentUser: StaffProfile;
@@ -721,18 +722,46 @@ interface TechnicalManagementViewProps {
 }
 
 export const TechnicalManagementView: React.FC<TechnicalManagementViewProps> = ({ currentUser }) => {
-  const healthChecks = [
-    { service: 'Workstation React App (Vite)', status: 'Operational', latency: '24ms', uptime: '99.98%' },
-    { service: 'Supabase PostgreSQL Database', status: 'Active (23 Tables)', latency: '38ms', uptime: '100%' },
-    { service: 'Firebase Authentication Auth SDK', status: 'Operational', latency: '45ms', uptime: '99.95%' },
-    { service: 'Doorbly Booking Realtime Dispatch API', status: 'Operational', latency: '52ms', uptime: '99.91%' },
-    { service: 'Work Credits Ledger Integrity Auditor', status: 'Operational', latency: '12ms', uptime: '100%' }
-  ];
+  const isAdmin =
+    (currentUser.systemRole === 'super_admin' || currentUser.permissionLevel === 'admin') &&
+    StorageEngine.isAdminSessionVerified();
 
-  const devTasks = [
-    { code: 'TECH-401', title: 'Supabase Realtime WebSocket Listener for Submissions', type: 'Database / API', credits: 150, status: 'Testing' },
-    { code: 'TECH-402', title: 'Zero-Pill Typography & Contrast Hardening for Windows Clients', type: 'UI / UX', credits: 100, status: 'In Review' },
-    { code: 'TECH-403', title: 'PostgreSQL Foreign Key Cascade Safety on Reversals', type: 'Database Migration', credits: 150, status: 'Approved' }
+  const supabaseConfigured = isSupabaseConfigured();
+  const isBrowserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+  const staffCount = StorageEngine.getStaffProfiles().length;
+  const bookingsCount = StorageEngine.getBookings().length;
+  const auditCount = StorageEngine.getAuditLogs().length;
+
+  const techTasks = StorageEngine.getDailyTasks().filter(
+    (t) => t.departmentId === 'dept_tech_it' || t.designationId === 'tech_exec' || t.designationId === 'software_dev'
+  );
+
+  const healthChecks = [
+    {
+      service: 'Workstation Web Client',
+      status: isBrowserOnline ? 'Online' : 'Offline',
+      detail: isBrowserOnline ? 'Active browser network connection' : 'No active internet connection'
+    },
+    {
+      service: isAdmin ? 'Supabase PostgreSQL Database' : 'Primary Cloud PostgreSQL Database',
+      status: supabaseConfigured ? `Configured (${TABLE_METADATA_MASTER.length} Tables)` : 'Local Persistence',
+      detail: supabaseConfigured ? 'Live cloud endpoint configured' : 'Operating on local workstation storage'
+    },
+    {
+      service: 'Workstation Auth & Session Guard',
+      status: 'Active',
+      detail: `${staffCount} registered staff profile(s)`
+    },
+    {
+      service: 'Booking & Dispatch Ledger',
+      status: 'Active',
+      detail: `${bookingsCount} total booking record(s) tracked`
+    },
+    {
+      service: 'System Audit Trail Engine',
+      status: 'Active',
+      detail: `${auditCount} immutable audit event(s) logged`
+    }
   ];
 
   return (
@@ -743,33 +772,33 @@ export const TechnicalManagementView: React.FC<TechnicalManagementViewProps> = (
             <span className="font-semibold text-xs px-2 py-0.5 rounded bg-[#0F766E]/10 text-[#0F766E]">
               Technology & Platform
             </span>
-            <span className="text-xs text-gray-400">•</span>
-            <span className="text-xs text-gray-500">workstation.doorbly.com</span>
           </div>
           <h1 className="text-xl font-bold text-gray-900 mt-1">
             Technical Systems & Engineering Management
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Platform health monitoring, booking flow verification, Supabase migrations, and web development tasks.
+            Live platform diagnostics, {isAdmin ? 'Supabase migrations' : 'database migrations'}, and assigned engineering tasks.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* System Health */}
+        {/* Live System Status */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs space-y-3">
           <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide pb-2 border-b border-gray-100 flex items-center justify-between">
-            <span>System Health Checks</span>
-            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">All Systems Normal</span>
+            <span>Live System Status</span>
+            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
+              {isBrowserOnline ? 'Client Online' : 'Offline Mode'}
+            </span>
           </h3>
           <div className="divide-y divide-gray-100 text-xs">
             {healthChecks.map((h, i) => (
-              <div key={i} className="py-2.5 flex items-center justify-between">
+              <div key={i} className="py-2.5 flex items-center justify-between gap-2">
                 <div>
                   <p className="font-bold text-gray-800">{h.service}</p>
-                  <p className="text-[10px] text-gray-400">Latency: {h.latency} • Uptime: {h.uptime}</p>
+                  <p className="text-[10px] text-gray-400">{h.detail}</p>
                 </div>
-                <span className="text-[10px] font-bold text-[#16865D] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="text-[10px] font-bold text-[#16865D] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shrink-0">
                   {h.status}
                 </span>
               </div>
@@ -777,29 +806,43 @@ export const TechnicalManagementView: React.FC<TechnicalManagementViewProps> = (
           </div>
         </div>
 
-        {/* Development Sprints */}
+        {/* Assigned Engineering Tasks */}
         <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs space-y-3">
           <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide pb-2 border-b border-gray-100 flex items-center justify-between">
-            <span>Engineering Sprints</span>
-            <span className="text-[10px] text-[#0F766E] bg-teal-50 px-2 py-0.5 rounded font-bold">Sprint 26.4</span>
+            <span>Assigned Engineering Tasks</span>
+            <span className="text-[10px] text-[#0F766E] bg-teal-50 px-2 py-0.5 rounded font-bold">
+              {techTasks.length} Active
+            </span>
           </h3>
           <div className="divide-y divide-gray-100 text-xs">
-            {devTasks.map((t) => (
-              <div key={t.code} className="py-2.5 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-[10px] font-bold bg-gray-100 px-1.5 py-0.2 rounded text-gray-700">
-                      {t.code}
-                    </span>
-                    <span className="font-semibold text-gray-900 text-xs">{t.title}</span>
-                  </div>
-                  <p className="text-[10px] text-gray-400">{t.type} • Value: ₹{t.credits} Credits</p>
-                </div>
-                <span className="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">
-                  {t.status}
-                </span>
+            {techTasks.length === 0 ? (
+              <div className="py-8 text-center text-gray-500">
+                <Code2 className="w-7 h-7 text-gray-300 mx-auto mb-2" />
+                <p className="font-semibold text-gray-700">No engineering tasks assigned yet.</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Tasks assigned to Technology & Web Development staff will appear here.
+                </p>
               </div>
-            ))}
+            ) : (
+              techTasks.map((t) => (
+                <div key={t.id} className="py-2.5 flex items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-[10px] font-bold bg-gray-100 px-1.5 py-0.2 rounded text-gray-700">
+                        {t.taskId}
+                      </span>
+                      <span className="font-semibold text-gray-900 text-xs">{t.taskTitle}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-400">
+                      Assigned to {t.employeeName} • Value: ₹{t.taskValueCredit} Credits
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded uppercase shrink-0">
+                    {t.status.replace('_', ' ')}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
